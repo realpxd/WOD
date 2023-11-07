@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "546771614409",
+    "firebase_url": "https://wod-prod-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "wod-prod",
+    "storage_bucket": "wod-prod.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:546771614409:android:ebdd57e80f1103122c2b18",
+        "android_client_info": {
+          "package_name": "com.programmerxd.wod"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA0-yy2tf6F8ahJsqWhqAv82O4mYMGjw2M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
