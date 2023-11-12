@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<alpha xmlns:android="http://schemas.android.com/apk/res/android"
+    android:interpolator="@android:anim/accelerate_interpolator"
+    android:fromAlpha="0.0" android:toAlpha="1.0"
+    android:duration="350" />
+<!--Fade in-->
+
+<!--<?xml version="1.0" encoding="utf-8"?>-->
+<!--<set xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    android:fillAfter="true">-->
+<!--    <scale-->
+<!--        android:duration="@android:integer/config_mediumAnimTime"-->
+<!--        android:fromXScale="0.0"-->
+<!--        android:fromYScale="1.0"-->
+<!--        android:pivotX="50%"-->
+<!--        android:toXScale="1.0"-->
+<!--        android:toYScale="1.0" />-->
+<!--</set>&lt;!&ndash;Split animation&ndash;&gt;-->
+
+
+    <!--<?xml version="1.0" encoding="utf-8"?>-->
+    <!--<alpha-->
+    <!--    xmlns:android="http://schemas.android.com/apk/res/android"-->
+    <!--    android:duration="5000"-->
+    <!--    android:fromAlpha="0.0"-->
+    <!--    android:interpolator="@android:anim/slide_out_right"-->
+    <!--    android:toAlpha="1.0" >-->
+    <!--</alpha>-->

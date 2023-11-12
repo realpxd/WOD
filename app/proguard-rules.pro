@@ -19,4 +19,7 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+# Keep Agora RTC SDK classes
 -keep class io.agora.**{*;}
+-keep class com.google.devtools.build.android.desugar.runtime.** { *; }
+

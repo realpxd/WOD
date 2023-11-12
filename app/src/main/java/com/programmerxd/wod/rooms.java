@@ -1,7 +1,8 @@
-package com.programmerxd.wod;
+/*
+    Activity class handling the room setup and player collection process.
+*/
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
+package com.programmerxd.wod;
 
 import android.content.Intent;
 import android.media.MediaPlayer;
@@ -11,6 +12,10 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -34,8 +39,16 @@ public class rooms extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Set the status bar color
+        getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.purple));
+
+        // Set the system UI visibility to light status bar
+        View decor = getWindow().getDecorView();
+        decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_rooms);
+
 
         // Initialize Firebase Database reference and Firebase Auth
         FirebaseDatabase database = FirebaseDatabase.getInstance();
@@ -43,24 +56,23 @@ public class rooms extends AppCompatActivity {
         firebaseAuth = FirebaseAuth.getInstance();
         currentUser = firebaseAuth.getCurrentUser();
 
+        // Initialize image views for room selection
         ImageView imageView6 = findViewById(R.id.imageView6);
-
         ImageView imageView7 = findViewById(R.id.imageView7);
         ImageView imageView8 = findViewById(R.id.imageView8);
         ImageView imageView9 = findViewById(R.id.imageView9);
         ImageView imageView10 = findViewById(R.id.imageView10);
         ImageView imageView11 = findViewById(R.id.imageView11);
 
+        // Initialize Firebase reference for room verification
         DatabaseReference verifyRoomsRef = FirebaseDatabase.getInstance().getReference("verifyAvailableRooms");
-
-
         DatabaseReference room1VerificationRef = verifyRoomsRef.child("room1");
+
+        // Check if the current user is assigned to room1
         room1VerificationRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists() && dataSnapshot.getValue() == currentUser.getUid()) {
-                    // Current user's UID exists in the room1 reference
-//                        room1Ref.child("player_" + currentUser.getUid()).setValue(true);
+                if (dataSnapshot.exists() && dataSnapshot.getValue().equals(currentUser.getUid())) {
                     collectPlayers();
                     handler = new Handler();
                     startCheckingPlayers();
@@ -69,76 +81,75 @@ public class rooms extends AppCompatActivity {
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-                // Handle any errors here
                 showToast("Error: " + databaseError.getMessage());
             }
         });
 
-
-        View.OnClickListener onClickListener = new View.OnClickListener() {
+        // Set up click listeners for room selection
+        setRoomClickListener(imageView6);
+        nullRoomClickListener(imageView7);
+        nullRoomClickListener(imageView8);
+        nullRoomClickListener(imageView9);
+        nullRoomClickListener(imageView10);
+        nullRoomClickListener(imageView11);
+    }
+    private void nullRoomClickListener(ImageView imageView) {
+        imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                playButtonClickSound();
+                showToast("Room not found.");
+            }
+        });
+    }
 
+    // Method to set up click listener for room selection
+    private void setRoomClickListener(ImageView imageView) {
+        imageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Play button click sound
+                playButtonClickSound();
+
+                // Check if the card view is not visible
                 CardView cardView = findViewById(R.id.cardView);
                 if (!(cardView.getVisibility() == View.VISIBLE)) {
-
-                    MediaPlayer mediaPlayer;
-                    mediaPlayer = MediaPlayer.create(rooms.this, R.raw.button_clicked);
-                    mediaPlayer.setLooping(false); // Set looping to continuously play the audio
-                    mediaPlayer.start();
-                    mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                        public void onCompletion(MediaPlayer mp) {
-                            mediaPlayer.stop();
-                            mediaPlayer.release();
-
-                        }
-
-
-                    });
-
-                    if (v.getId() == R.id.imageView6) {
-                        if (currentUser != null) {
-                            room1Ref.child("player_" + currentUser.getUid()).setValue(true);
-                            collectPlayers();
-
-                            handler = new Handler();
-                            startCheckingPlayers();
-                        }
-                    } else {
-                        showToast("Room not found");
+                    // Check if the current user is not null
+                    if (currentUser != null) {
+                        // Set the player in the room1 database
+                        room1Ref.child("player_" + currentUser.getUid()).setValue(true);
+                        collectPlayers();
+                        handler = new Handler();
+                        startCheckingPlayers();
                     }
                 }
             }
-        };
-
-        imageView6.setOnClickListener(onClickListener);
-        imageView7.setOnClickListener(onClickListener);
-        imageView8.setOnClickListener(onClickListener);
-        imageView9.setOnClickListener(onClickListener);
-        imageView10.setOnClickListener(onClickListener);
-        imageView11.setOnClickListener(onClickListener);
-
+        });
     }
 
+    // Method to collect players in the room
     private void collectPlayers() {
-
         CardView cardView = findViewById(R.id.cardView);
         cardView.setVisibility(View.VISIBLE);
 
-        View.OnClickListener onClickListener = new View.OnClickListener() {
+        // Set up an empty click listener for the card view
+        findViewById(R.id.cardView).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                // Do nothing on card view click
             }
-        };
+        });
 
+        // Check the number of players in the room
         room1Ref.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (dataSnapshot.getChildrenCount() >= 4) {
+                    // Start the playground if there are enough players
                     startPlayground();
                     handler.removeCallbacksAndMessages(null); // Stop the checking mechanism
                 } else {
+                    // Update player count if not enough players
                     TextView textView = findViewById(R.id.textView6);
                     textView.setText(dataSnapshot.getChildrenCount() + " / 10");
                 }
@@ -151,53 +162,35 @@ public class rooms extends AppCompatActivity {
         });
     }
 
+    // Method to start the playground and assign roles
     private void startPlayground() {
-
         Intent serviceIntent = new Intent(this, AudioService.class);
         stopService(serviceIntent); // Stop the audio service
 
-        // Get a reference to the Firebase Database
         DatabaseReference room1Ref = FirebaseDatabase.getInstance().getReference("room1");
 
         room1Ref.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
-//                    for (DataSnapshot playerSnapshot : dataSnapshot.getChildren()) {
-//                        // Randomly decide if the player is an imposter or a crewmate
-//                        String role = (new Random().nextInt(2) == 0) ? "imposter" : "crewmate";
-//
-//                        // Update the role of the player in the database
-//                        playerSnapshot.getRef().setValue(role);
-//                    }
-
-                    // Fetch the total count of players
                     int playerCount = (int) dataSnapshot.getChildrenCount();
-
-                    // Store the UIDs of all players
                     String[] playerUIDs = new String[playerCount];
                     int index = 0;
                     for (DataSnapshot playerSnapshot : dataSnapshot.getChildren()) {
                         playerUIDs[index] = playerSnapshot.getKey();
                         index++;
                     }
-
-                    // Randomly select an imposter
                     Random random = new Random();
                     int imposterIndex = random.nextInt(playerCount);
 
                     for (int i = 0; i < playerCount; i++) {
                         String role = (i == imposterIndex) ? "imposter" : "crewmate";
-
-                        // Set the role for the corresponding UID
                         DatabaseReference playerRef = FirebaseDatabase.getInstance().getReference("room1/" + playerUIDs[i]);
                         playerRef.setValue(role);
                     }
 
-
                     if (!gameStarted) {
-                        gameStarted = true; // Set the flag to true
-                        // Proceed with the rest of the game after assigning roles
+                        gameStarted = true;
                         startGame();
                     }
                 }
@@ -210,24 +203,20 @@ public class rooms extends AppCompatActivity {
         });
     }
 
+    // Method to start the game after assigning roles
     private void startGame() {
-        // The rest of your logic to start the game after assigning roles
-        // This might include playing game sounds, initiating UI changes, etc.
-        // For example:
-
-        // Start a new activity or update UI elements for the game
         Intent intent = new Intent(this, Playground.class);
         startActivity(intent);
-
-        // Finish this activity
-        finish();
+//        overridePendingTransition(R.anim.fadein, R.anim.scaledown);
+        finish(); // Finish this activity
     }
 
-
+    // Method to show a toast message
     private void showToast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
+    // Method to start checking players with a delay
     private void startCheckingPlayers() {
         handler.postDelayed(new Runnable() {
             @Override
@@ -240,27 +229,30 @@ public class rooms extends AppCompatActivity {
                     showToast("Maximum wait time reached. Exiting the room.");
                     CardView cardView = findViewById(R.id.cardView);
                     cardView.setVisibility(View.GONE);
-//                    startPlayground();
                     elapsedTime = 0;
                 }
             }
         }, 300); // Initial delay for the first check
     }
 
-    @Override
-    public void onBackPressed() {
+    // Method to play the button click sound
+    private void playButtonClickSound() {
         MediaPlayer mediaPlayer;
         mediaPlayer = MediaPlayer.create(rooms.this, R.raw.button_clicked);
-        mediaPlayer.setLooping(false); // Set looping to continuously play the audio
+        mediaPlayer.setLooping(false);
         mediaPlayer.start();
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             public void onCompletion(MediaPlayer mp) {
                 mediaPlayer.stop();
                 mediaPlayer.release();
-
             }
-
         });
+    }
+
+    @Override
+    public void onBackPressed() {
+        playButtonClickSound();
         super.onBackPressed();
+        overridePendingTransition(R.anim.fadein, R.anim.fadeout);
     }
 }

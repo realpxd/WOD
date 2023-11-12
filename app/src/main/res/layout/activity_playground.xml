@@ -182,10 +182,10 @@
         android:layout_width="match_parent"
 
         android:layout_height="290dp"
+        android:onClick="pushToTalk"
         app:layout_constraintBottom_toBottomOf="@+id/playersContainer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        android:onClick="pushToTalk"
 
 
         app:layout_constraintTop_toBottomOf="@+id/linearLayout5">
@@ -226,9 +226,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:fillViewport="true"
+        android:scrollbars="none"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+
         app:layout_constraintTop_toBottomOf="@+id/relativeLayout">
 
         <LinearLayout
@@ -274,11 +276,11 @@
         android:id="@+id/imageView5"
         android:layout_width="50dp"
         android:layout_height="50dp"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="5dp"
+        android:onClick="exitGame"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/exit_game"
-        android:onClick="exitGame"
-        android:layout_marginTop="5dp"
-        android:layout_marginStart="5dp"/>
+        app:srcCompat="@drawable/exit_game" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

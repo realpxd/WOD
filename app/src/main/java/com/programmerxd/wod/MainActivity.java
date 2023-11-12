@@ -1,19 +1,15 @@
 package com.programmerxd.wod;
 
-import androidx.appcompat.app.AppCompatActivity;
-//import androidx.constraintlayout.widget.ConstraintLayout;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.animation.Animation;
 import android.view.animation.ScaleAnimation;
-//import android.widget.ImageView;
 import android.widget.RelativeLayout;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-//import com.programmerxd.wod.R;
-//import com.programmerxd.wod.playerData;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -50,14 +46,15 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onAnimationEnd(Animation animation) {
                 // Animation ended, start the new activity
-                startActivity(new Intent(MainActivity.this, playerData.class));
 
 
                 FirebaseUser currentUser = firebaseAuth.getCurrentUser();
                 if (currentUser == null) {
                     startActivity(new Intent(MainActivity.this, playerData.class));
+                    overridePendingTransition(R.anim.fadein, R.anim.fadeout);
                 } else {
                     startActivity(new Intent(MainActivity.this, home.class));
+                    overridePendingTransition(R.anim.fadein, R.anim.fadeout);
                 }
                 finish(); // Finish this activity to prevent going back
             }
@@ -65,9 +62,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onAnimationRepeat(Animation animation) {
                 // Animation repeated
-                // Animation ended, start the new activity
-                startActivity(new Intent(MainActivity.this, playerData.class));
-                finish(); // Finish this activity to prevent going back
+                anim.cancel();
             }
         });
     }
