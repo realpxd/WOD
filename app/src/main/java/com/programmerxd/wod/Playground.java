@@ -11,6 +11,7 @@ import android.speech.RecognizerIntent;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -20,12 +21,14 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -71,13 +74,16 @@ public class Playground extends AppCompatActivity {
 
     // Flag to track if the player role container is clicked
     boolean isPlayerRoleContainerClicked = true;
-
+    TextView notificationToast;
+    TextView textCurrentRadioServerFrequency;
+    TextView infoText;
+    Boolean didImposterLeft = false;
+    Boolean isEmergencyMeetingTriggered = false;
     // DatabaseReference for room1rs
     private DatabaseReference room1rsRef;
-
+    private DatabaseReference room1Ref;
     // Flag to check if the local user has joined a channel
     private boolean isJoined = false;
-
     // Agora RTC engine event handler to handle real-time communication events
     private final IRtcEngineEventHandler mRtcEventHandler = new IRtcEngineEventHandler() {
         @Override
@@ -105,47 +111,36 @@ public class Playground extends AppCompatActivity {
             isJoined = false;
         }
     };
-
     // HorizontalScrollView to contain player views
     private HorizontalScrollView playersContainer;
-
     // Database reference for user information
     private DatabaseReference users;
-
     // Agora Voice SDK engine for real-time communication
     private RtcEngine agoraEngine;
-
     // Index to select a random radio server token
     private int randomIndex = 0;
-
     // Countdown timer for specific game actions
     private int time_countdown = 10;
-
     // Role assigned to the current user (e.g., imposter or crewmate)
     private String role;
-
     // Countdown timer for certain game actions
     private CountDownTimer countdownTimer;
-
     // Flag to indicate the microphone state (on or off)
     private boolean isMicOn = false;
-
     // Launcher for handling speech recognition results
     private ActivityResultLauncher<Intent> speechRecognitionLauncher;
-
     // Flag to indicate whether speech recognition is in progress
     private boolean isSpeechRecognitionInProgress = false;
-
     // Username of the current user
     private String username;
-
     // Firebase authentication instance
     private FirebaseAuth firebaseAuth;
-
     // Firebase user representing the current user
     private FirebaseUser currentUser;
-
     private MediaPlayer gameStartVoicePlayer;
+    private String[] playerNames = new String[10];
+    private boolean isPlayerKilled = false;
+    private String[] killedPlayers = new String[10];
 
     /**
      * Handles the push-to-talk functionality.
@@ -190,6 +185,10 @@ public class Playground extends AppCompatActivity {
 
         // Initialize roleIndicator
         roleIndicator = findViewById(R.id.roleIndicator);
+        notificationToast = findViewById(R.id.notificationToast);
+        infoText = findViewById(R.id.infoText);
+        // Find the TextView responsible for displaying the current radio server frequency
+        textCurrentRadioServerFrequency = findViewById(R.id.currentRadioServerFrequency);
 
         // Request necessary permissions if not granted
         if (!checkSelfPermission()) {
@@ -223,14 +222,16 @@ public class Playground extends AppCompatActivity {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 // Iterate through the players in the "users" node
+                int i = 0;
                 for (DataSnapshot playerSnapshot : dataSnapshot.getChildren()) {
                     String playerName = playerSnapshot.child("username").getValue(String.class);
-
                     if (playerName != null) {
+                        playerNames[i] = playerName;
                         // Identify the current user's username
                         if (playerSnapshot.getKey().equals(currentUser.getUid())) {
                             username = playerName;
                         }
+                        i++;
                     }
                 }
             }
@@ -243,27 +244,40 @@ public class Playground extends AppCompatActivity {
 
         // Get the user's role from the "room1" node in Firebase
         DatabaseReference room1Ref = FirebaseDatabase.getInstance().getReference("room1");
-        room1Ref.addListenerForSingleValueEvent(new ValueEventListener() {
+        room1Ref.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 boolean roleFound = false;
+                int i = 0;
 
                 // Iterate through the players in the "room1" node
                 for (DataSnapshot playerSnapshot : dataSnapshot.getChildren()) {
                     String playerUID = playerSnapshot.getKey();
-                    if (playerUID != null && playerUID.equals("player_" + currentUser.getUid())) {
-                        role = playerSnapshot.getValue(String.class);
-                        if (role != null) {
-                            roleFound = true;
-                            // Display the role indicator based on the user's role
-                            if (role.equals("imposter")) {
-                                showToast("You are an imposter!");
-                                roleIndicator.setImageResource(R.drawable.imposter_toast);
-                            } else {
-                                showToast("You are a crewmate!");
-                                roleIndicator.setImageResource(R.drawable.crew_toast);
+                    if (playerUID != null) {
+
+                        String playerName = playerSnapshot.child("username").getValue(String.class);
+                        playerNames[i] = playerName;
+                        i++;
+
+
+                        if (playerUID.equals("player_" + currentUser.getUid())) {
+                            role = playerSnapshot.child("role").getValue(String.class);
+                            if (role != null) {
+                                roleFound = true;
+                                // Display the role indicator based on the user's role
+                                if (role.equals("imposter")) {
+                                    showToast("You are the imposter!");
+                                    roleIndicator.setImageResource(R.drawable.imposter_toast);
+                                } else if (role.equals("crewmate")) {
+                                    showToast("You are a crewmate!");
+                                    roleIndicator.setImageResource(R.drawable.crew_toast);
+                                } else if (role.equals("dead")) {
+                                    showToast("You are dead!");
+//                                    roleIndicator.setImageResource(R.drawable.dead_toast);
+                                } else {
+                                }
+                                break;
                             }
-                            break;
                         }
                     }
                 }
@@ -317,8 +331,90 @@ public class Playground extends AppCompatActivity {
                 agoraEngine.enableAudio();
             }
         });
+
+        startRoomCountdown();
+
+
+        DatabaseReference broadcastingRef = FirebaseDatabase.getInstance().getReference("broadcastingInformation");
+        ChildEventListener childEventListener = new ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+                if (snapshot.getKey().equals("didImposterLeft")) {
+                    if (snapshot.getValue().equals(true)) {
+                        didImposterLeft = true;
+                        showToast("Imposter left the game");
+                        gameOver(role);
+                    }
+                } else if (snapshot.getKey().equals("isEmergencyMeetingTriggered")) {
+                    if (snapshot.getValue().equals(true)) {
+                        isEmergencyMeetingTriggered = true;
+                        showToast("Emergency meeting triggered");
+                        callEmergencyMeeting();
+                    }
+                }
+            }
+
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+
+            }
+
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot snapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        };
+        childEventListener = broadcastingRef.addChildEventListener(childEventListener);
+
     }
 
+    private void gameOver(String winner) {
+        if (!role.equals("imposter")) {
+            showToast("Game Over " + winner + " won the game");
+            finish();
+        }
+    }
+
+    private void callEmergencyMeeting() {
+        showToast("Emergency meeting called");
+    }
+
+    private void startRoomCountdown() {
+        // Set the countdown time to 10 minutes (600 seconds)
+        int countdownTimeInSeconds = 600;
+
+        // Create a CountDownTimer with the specified countdown time
+        CountDownTimer countDownTimer = new CountDownTimer(countdownTimeInSeconds * 1000, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                // This method will be called every second (1000 milliseconds) until the countdown is finished
+                // You can update UI elements or perform actions during the countdown here
+                // For example, you might want to display the remaining time in a TextView
+                // textViewTimer.setText("Time remaining: " + millisUntilFinished / 1000 + " seconds");
+            }
+
+            @Override
+            public void onFinish() {
+                // This method will be called when the countdown is finished (after 10 minutes)
+                // You can add any actions you want to perform when the countdown reaches zero
+                DatabaseReference currentRoom = FirebaseDatabase.getInstance().getReference();
+                currentRoom.child("room1").removeValue();
+                currentRoom.child("isRoomStarted").setValue(false);
+//                gameOver(); // win the imposter
+                finish(); // Finish the activity
+            }
+        }.start();
+    }
 
     /**
      * Dynamically creates player views in the UI based on the provided player names.
@@ -344,7 +440,9 @@ public class Playground extends AppCompatActivity {
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
                 playerLayout.setOrientation(LinearLayout.VERTICAL);
                 playerLayout.setPadding(dpToPx(5), dpToPx(5), dpToPx(5), dpToPx(5));
-                params.weight = 1;
+//                params.weight = 1;
+                params.setMarginEnd(dpToPx(20));
+                params.setMarginStart(dpToPx(20));
                 playerLayout.setLayoutParams(params);
 
                 // Create an ImageView for the player image
@@ -358,6 +456,7 @@ public class Playground extends AppCompatActivity {
                 playerNameTextView.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
                 playerNameTextView.setText(playerName);
                 playerNameTextView.setGravity(Gravity.CENTER);
+                playerNameTextView.setTextAlignment(View.TEXT_ALIGNMENT_TEXT_END);
                 playerNameTextView.setTextColor(getResources().getColor(R.color.white));
                 playerNameTextView.setTypeface(getResources().getFont(R.font.vertigo_flf_bold));
 
@@ -401,6 +500,9 @@ public class Playground extends AppCompatActivity {
         try {
             // Disable Agora audio temporarily during speech recognition
             agoraEngine.disableAudio();
+//            agoraEngine.muteLocalAudioStream(true);
+//            agoraEngine.muteAllRemoteAudioStreams(true);
+//            agoraEngine.leaveChannel();
             // Launch the speech recognition activity using the registered launcher
             speechRecognitionLauncher.launch(speechRecognizerIntent);
         } catch (ActivityNotFoundException e) {
@@ -465,6 +567,9 @@ public class Playground extends AppCompatActivity {
      * @param commandSpoken The recognized speech command.
      */
     private void processRecognizedCommand(String commandSpoken) {
+
+//        agoraEngine.muteLocalAudioStream(false);
+//        agoraEngine.enableLocalAudio(true);
         // Check if the recognized command starts with "kill"
         if (commandSpoken.toLowerCase().startsWith("kill")) {
             // Split the recognized command into words
@@ -474,12 +579,83 @@ public class Playground extends AppCompatActivity {
             if (spokenWords.length >= 2) {
                 // Extract the player name from the command
                 String playerName = spokenWords[1];
+                boolean nameMatched = false;
+                for (int i = 0; i < playerNames.length; i++) {
+                    if (playerName.equals(playerNames[i])) {
+                        nameMatched = true;
+                        room1Ref = FirebaseDatabase.getInstance().getReference("room1");
+                        room1Ref.addValueEventListener(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                for (DataSnapshot playerSnapshot : snapshot.getChildren()) {
+                                    String playerUID = playerSnapshot.getKey();
+                                    if (playerUID != null) {
+                                        String playerName = playerSnapshot.child("username").getValue(String.class);
+                                        if (playerName != null) {
+                                            if (playerName.equals(playerName)) {
+                                                String playerRole = playerSnapshot.child("role").getValue(String.class);
+                                                if (playerRole != null) {
+                                                    if (playerRole.equals("imposter")) {
+                                                        showToast("You cannot kill yourself");
+                                                    } else if (playerRole.equals("crewmate")) {
+//                                                        showToast("You killed " + playerName);
+                                                        DatabaseReference curPlayerRef = playerSnapshot.getRef().child("role");
+                                                        curPlayerRef.setValue("dead");
+//                                                        DatabaseReference curPlayerRef2 = playerSnapshot.getRef().child("isKilled");
+//                                                        curPlayerRef2.setValue(true);
+//                                                        DatabaseReference curPlayerRef3 = playerSnapshot.getRef().child("isKilledBy");
+//                                                        curPlayerRef3.setValue(username);
+//                                                        DatabaseReference curPlayerRef4 = playerSnapshot.getRef().child("isKilledBy");
+//                                                        curPlayerRef4.setValue(username);
+//                                                        DatabaseReference curPlayerRef5 = playerSnapshot.getRef().child("isKilledBy");
+//                                                        curPlayerRef5.setValue(username);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
 
-                // Display a toast indicating the intention to kill the specified player
-                showToast("Killing " + playerName);
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError error) {
+
+                            }
+                        });
+                    }
+
+
+                    // Display a toast indicating the intention to kill the specified player
+//                showToast("Killing " + playerName);
+                    infoText.setVisibility(View.GONE);
+                    textCurrentRadioServerFrequency.setVisibility(View.GONE);
+                    notificationToast.setVisibility(View.VISIBLE);
+                    notificationToast.setText("Killing " + playerName);
+                    CountDownTimer countDownTimer = new CountDownTimer(2500, 500) {
+                        @Override
+                        public void onTick(long millisUntilFinished) {
+
+                        }
+
+                        @Override
+                        public void onFinish() {
+
+                            infoText.setVisibility(View.VISIBLE);
+                            textCurrentRadioServerFrequency.setVisibility(View.VISIBLE);
+                            notificationToast.setVisibility(View.GONE);
+                        }
+                    }.start();
+                    break;
+                }
+
+            if (!nameMatched) {
+                showToast("Player not found , No-one was killed");
             }
+
         }
     }
+
+}
 
     /**
      * Handles the click event on the player role container, managing actions based on the player's role.
@@ -578,8 +754,6 @@ public class Playground extends AppCompatActivity {
             // Generate a random index within the range of available tokens
             randomIndex = new Random().nextInt(currentRadioServer.length);
 
-            // Find the TextView responsible for displaying the current radio server frequency
-            TextView textCurrentRadioServerFrequency = findViewById(R.id.currentRadioServerFrequency);
             channelName = channelNames[randomIndex];
 
             // Get the token at the randomly generated index and display the corresponding frequency
@@ -623,6 +797,10 @@ public class Playground extends AppCompatActivity {
 
         // Trigger the startPlayground method with the action "joining"
         startPlayground("joining");
+
+        if (role.equals("dead")) {
+            agoraEngine.muteLocalAudioStream(true);
+        }
 
         // Log a message indicating an attempt to join the channel
         Log.d("Agora", "Attempted to join channel");
@@ -743,7 +921,7 @@ public class Playground extends AppCompatActivity {
         if (randomIndex > 4) randomIndex = 0;
 
         // Update the UI with the frequency and channel name of the new server
-        TextView textCurrentRadioServerFrequency = findViewById(R.id.currentRadioServerFrequency);
+        textCurrentRadioServerFrequency = findViewById(R.id.currentRadioServerFrequency);
         textCurrentRadioServerFrequency.setText(currentRadioServerFrequency[randomIndex]);
         channelName = channelNames[randomIndex];
 
@@ -751,6 +929,78 @@ public class Playground extends AppCompatActivity {
         agoraEngine.leaveChannel();
         connectToChannel(currentRadioServer[randomIndex]);
     }
+
+    public void disableOtherClickEvents(View view) {
+        return;
+    }
+//    public void callEmergencyMeeting() {
+//        generateInnerLayoutStructure();
+//    }
+//
+//    private void generateInnerLayoutStructure() {
+//        LinearLayout horizontalContainer = new LinearLayout(context);
+//        horizontalContainer.setLayoutParams(new LinearLayout.LayoutParams(
+//                ViewGroup.LayoutParams.MATCH_PARENT,
+//                ViewGroup.LayoutParams.WRAP_CONTENT));
+//        horizontalContainer.setOrientation(LinearLayout.HORIZONTAL);
+//        horizontalContainer.setId(R.id.EmergencyMeetingHorizontalPlayerContainer);
+//
+//        for (int i = 0; i < 3; i++) {
+//            LinearLayout verticalContainer = createVerticalContainer(context);
+//            ImageView imageView = createImageView(context);
+//            TextView textView = createTextView(context, playersNames[i]);
+//
+//            verticalContainer.addView(imageView);
+//            verticalContainer.addView(textView);
+//
+//            horizontalContainer.addView(verticalContainer);
+//        }
+//
+//        LinearLayout parentContainer = findViewById(R.id.EmergencyMeetingPlayerContainerWrapper);
+//        parentContainer.addView(horizontalContainer);
+//    }
+//
+//    private LinearLayout createVerticalContainer(Context context) {
+//        LinearLayout verticalContainer = new LinearLayout(context);
+//        verticalContainer.setLayoutParams(new LinearLayout.LayoutParams(
+//                ViewGroup.LayoutParams.WRAP_CONTENT,
+//                ViewGroup.LayoutParams.WRAP_CONTENT));
+//        verticalContainer.setOrientation(LinearLayout.VERTICAL);
+//        verticalContainer.setWeightSum(1); // Set weight sum to distribute equal space
+//
+//        return verticalContainer;
+//    }
+//
+//    private ImageView createImageView(Context context) {
+//        ImageView imageView = new ImageView(context);
+//        imageView.setLayoutParams(new LinearLayout.LayoutParams(
+//                ViewGroup.LayoutParams.WRAP_CONTENT,
+//                ViewGroup.LayoutParams.WRAP_CONTENT));
+//        imageView.setImageResource(R.drawable.player_pfp); // Set default image resource
+//
+//        return imageView;
+//    }
+//
+//    private TextView createTextView(Context context, String playerName) {
+//        TextView textView = new TextView(context);
+//        textView.setLayoutParams(new LinearLayout.LayoutParams(
+//                ViewGroup.LayoutParams.WRAP_CONTENT,
+//                ViewGroup.LayoutParams.WRAP_CONTENT));
+//        textView.setText(playerName);
+//        textView.setTextSize(20);
+//        textView.setTextColor(context.getResources().getColor(R.color.white));
+//        textView.setGravity(Gravity.CENTER);
+//        textView.setTypeface(ResourcesCompat.getFont(context, R.font.vertigo_flf_bold));
+//
+//        return textView;
+//    }
+//
+//    private LinearLayout findViewById(int id) {
+//        // Implement this method to find the layout by ID
+//        // Example:
+//        return (LinearLayout) findViewById(id);
+//    }
+
 
     /**
      * Displays a short-duration toast message with the provided message text.
@@ -770,6 +1020,28 @@ public class Playground extends AppCompatActivity {
         // Finish the current activity to exit the game
         finish();
 //        overridePendingTransition(R.anim.fadein, R.anim.fadeout);
+    }
+
+    private void removePlayer() {
+        // Remove the current player's data from the database
+        DatabaseReference room1Ref = FirebaseDatabase.getInstance().getReference("room1");
+        DatabaseReference currentRoomData = FirebaseDatabase.getInstance().getReference("verifyAvailableRooms");
+
+        room1Ref.child("player_" + currentUser.getUid()).removeValue();
+
+//        room1rsRef.child(channelName).child("players").child(currentUser.getUid()).removeValue();
+        if (role.equals("imposter")) {
+            DatabaseReference setImposterLeft = FirebaseDatabase.getInstance().getReference("broadcastingInformation");
+            setImposterLeft.child("didImposterLeft").setValue(true);
+
+//            showToast("Crewmates won the game!");
+
+            currentRoomData.child("room1").removeValue();
+            currentRoomData.child("isRoomStarted").setValue(false);
+        }
+
+//            finish();
+
     }
 
     /**
@@ -795,12 +1067,15 @@ public class Playground extends AppCompatActivity {
      */
     @Override
     protected void onDestroy() {
-        // Call the onDestroy method of the superclass
-        if (gameStartVoicePlayer.isPlaying()) {
-            gameStartVoicePlayer.stop();
-            gameStartVoicePlayer.release();
-        }
-        super.onDestroy();
+
+//        // Memory cleanup
+//        if (gameStartVoicePlayer != null && gameStartVoicePlayer.isPlaying()) {
+//            gameStartVoicePlayer.stop();
+//            gameStartVoicePlayer.release();
+//        }
+
+        // Remove player from the database
+        removePlayer();
 
         // Check if the Agora engine instance is not null
         if (agoraEngine != null) {
@@ -809,5 +1084,8 @@ public class Playground extends AppCompatActivity {
             RtcEngine.destroy();
             agoraEngine = null;
         }
+
+        //destroy
+        super.onDestroy();
     }
 }

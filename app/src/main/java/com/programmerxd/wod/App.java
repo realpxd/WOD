@@ -22,7 +22,7 @@ public class App {
     public static String[] generateTokens(home activity, int numberOfTokens) {
         String[] tokens = new String[numberOfTokens];
         RtcTokenBuilder2 tokenBuilder = new RtcTokenBuilder2();
-        int timestamp = (int) (System.currentTimeMillis() / 1000 + 80);
+        int timestamp = 1200; // expire time, 20 minutes (10minute extra for player searching and other related stuff)
 
         // Generate tokens for each channel
         for (int i = 0; i < numberOfTokens; i++) {

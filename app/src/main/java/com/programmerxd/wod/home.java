@@ -164,6 +164,8 @@ public class home extends AppCompatActivity {
             storeUserUidInDatabase(currentUser, verifyRoomsRef);
         }
 
+        verifyRoomsRef.child("isRoomStarted").setValue(false);
+
         Intent intent = new Intent(this, rooms.class);
         startActivity(intent);
     }
