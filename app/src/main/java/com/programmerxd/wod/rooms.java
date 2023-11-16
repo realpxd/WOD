@@ -15,25 +15,25 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.Objects;
 import java.util.Random;
 
 public class rooms extends AppCompatActivity {
 
     private final int MAX_WAIT_TIME = 120; // Maximum wait time in seconds
+    private final String currentRoom = "room1";
     // Initialize image views for room selection
     ImageView imageView6;
     ImageView imageView7;
@@ -41,13 +41,15 @@ public class rooms extends AppCompatActivity {
     ImageView imageView9;
     ImageView imageView10;
     ImageView imageView11;
-    private DatabaseReference room1Ref; // Reference to 'room1' in Firebase Database
+    FirebaseDatabase database;
+    DatabaseReference playersRef;
     private FirebaseAuth firebaseAuth;
     private FirebaseUser currentUser;
+    private DatabaseReference verifyAvailableRoomsRef;
     private Handler handler;
     private int elapsedTime = 0;
     private boolean gameStarted = false; // Flag to track whether the game has started
-//    private boolean roomStarted = false;
+    //    private boolean roomStarted = false;
     private boolean intentClosed = false;
     private boolean isHost = false;
     private String[] usernames;
@@ -66,8 +68,7 @@ public class rooms extends AppCompatActivity {
         setContentView(R.layout.activity_rooms);
 
         // Initialize Firebase Database reference and Firebase Auth
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        room1Ref = database.getReference("room1");
+        database = FirebaseDatabase.getInstance();
         firebaseAuth = FirebaseAuth.getInstance();
         currentUser = firebaseAuth.getCurrentUser();
 
@@ -80,11 +81,12 @@ public class rooms extends AppCompatActivity {
         imageView11 = findViewById(R.id.imageView11);
 
         // Initialize Firebase reference for room verification
-        DatabaseReference verifyRoomsRef = FirebaseDatabase.getInstance().getReference("verifyAvailableRooms");
-        DatabaseReference room1VerificationRef = verifyRoomsRef.child("room1");
+        verifyAvailableRoomsRef = FirebaseDatabase.getInstance().getReference("verifyAvailableRooms");
+        playersRef = verifyAvailableRoomsRef.child("verifyAvailableRooms/" + currentRoom + "/players");
+//        playersRef = verifyAvailableRoomsRef.child(currentRoom);
 
         // Check if the current user is assigned to room1
-        room1VerificationRef.addListenerForSingleValueEvent(new ValueEventListener() {
+        playersRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists() && dataSnapshot.getValue().equals(currentUser.getUid())) {
@@ -116,12 +118,9 @@ public class rooms extends AppCompatActivity {
     }
 
     private void nullRoomClickListener(ImageView imageView) {
-        imageView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                playButtonClickSound();
-                showToast("Room not found.");
-            }
+        imageView.setOnClickListener(v -> {
+            playButtonClickSound();
+            showToast("Room not found.");
         });
     }
 
@@ -139,21 +138,20 @@ public class rooms extends AppCompatActivity {
                     // Check if the current user is not null
                     if (currentUser != null) {
 
-                        DatabaseReference verifyRoomsRef = FirebaseDatabase.getInstance().getReference("verifyAvailableRooms");
 
-                        verifyRoomsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                        verifyAvailableRoomsRef.addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                if (snapshot.exists() && snapshot.child("isRoomStarted").getValue().equals(true)) {
+                                if (snapshot.exists() && Objects.equals(snapshot.child(currentRoom + "/isRoomStarted").getValue(), true)) {
                                     showToast("Room is already started");
-                                } else if (snapshot.child("room1").getValue() != null && snapshot.child("isRoomStarted").getValue().equals(false)) {
+                                } else if (snapshot.child(currentRoom + "/isRoomStarted").getValue() != null && snapshot.child(currentRoom + "/isRoomStarted").getValue().equals(false)) {
 
 //                                        showToast("Starting Room");
                                     collectPlayers();
                                     handler = new Handler();
                                     startCheckingPlayers();
 
-                                } else if (snapshot.child("room1").getValue() == null){
+                                } else if (snapshot.child(currentRoom).getValue() == null) {
                                     showToast("No room available, Please host one.");
                                 } else {
                                     showToast("Error: " + snapshot.getValue());
@@ -185,51 +183,21 @@ public class rooms extends AppCompatActivity {
         });
     }
 
-//    private boolean checkIfRoomIsAlreadyStarted(RoomCheckCallback callback) {
-//        DatabaseReference verifyRoomsRef = FirebaseDatabase.getInstance().getReference("verifyAvailableRooms");
-////        verifyRoomsRef.child("isRoomStarted").equals(true));
-//        verifyRoomsRef.addListenerForSingleValueEvent(new ValueEventListener() {
-//            @Override
-//            public void onDataChange(@NonNull DataSnapshot snapshot) {
-//                boolean roomStarted = false;
-//                for (DataSnapshot roomSnapshot : snapshot.getChildren()) {
-//                    if (roomSnapshot.getKey().equals("isRoomStarted") && roomSnapshot.getValue().equals(true)) {
-//                        roomStarted = true;
-//                        break;
-//                    } else if (roomSnapshot.getKey().equals("isRoomStarted") && roomSnapshot.getValue().equals(false)) {
-//                        roomStarted = false;
-//                    }
-//                }
-//                callback.onResult(roomStarted);
-//            }
-//
-//            @Override
-//            public void onCancelled(@NonNull DatabaseError error) {
-//                callback.onResult(false); // Handle errors gracefully
-//
-//            }
-//        });
-//        return roomStarted;
-//    }
-
     // Method to collect players in the room
     private void collectPlayers() {
         // Set the player in the room1 database
-        room1Ref.child("player_" + currentUser.getUid()).setValue(true);
+        playersRef.child("player_" + currentUser.getUid()).setValue(true);
 
         CardView cardView = findViewById(R.id.cardView);
         cardView.setVisibility(View.VISIBLE);
 
         // Set up an empty click listener for the card view
-        findViewById(R.id.cardView).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Do nothing on card view click
-            }
+        findViewById(R.id.cardView).setOnClickListener(v -> {
+            // Do nothing on card view click
         });
 
         // Check the number of players in the room
-        room1Ref.addListenerForSingleValueEvent(new ValueEventListener() {
+        playersRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 // Update player count
@@ -255,21 +223,21 @@ public class rooms extends AppCompatActivity {
         Intent serviceIntent = new Intent(this, AudioService.class);
         stopService(serviceIntent); // Stop the audio service
 
-        DatabaseReference room1Ref = FirebaseDatabase.getInstance().getReference("room1");
+//        DatabaseReference room1Ref = FirebaseDatabase.getInstance().getReference("room1");
         DatabaseReference users = FirebaseDatabase.getInstance().getReference("users");
 
         users.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    // store the usernames in an string array
-                    usernames = new String[(int) snapshot.getChildrenCount()];
-                    uids = new String[(int) snapshot.getChildrenCount()];
-                    int index = 0;
-                    for (DataSnapshot usernameSnapshot : snapshot.getChildren()) {
-                        usernames[index] = usernameSnapshot.child("username").getValue().toString();
-                        uids[index] = usernameSnapshot.getKey();
-                        index++;
-                    }
+                // store the usernames in an string array
+                usernames = new String[(int) snapshot.getChildrenCount()];
+                uids = new String[(int) snapshot.getChildrenCount()];
+                int index = 0;
+                for (DataSnapshot usernameSnapshot : snapshot.getChildren()) {
+                    usernames[index] = usernameSnapshot.child("username").getValue().toString();
+                    uids[index] = usernameSnapshot.getKey();
+                    index++;
+                }
 
             }
 
@@ -279,7 +247,7 @@ public class rooms extends AppCompatActivity {
             }
         });
 
-        room1Ref.addListenerForSingleValueEvent(new ValueEventListener() {
+        playersRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
@@ -295,12 +263,12 @@ public class rooms extends AppCompatActivity {
 
                     for (int i = 0; i < playerCount; i++) {
                         String role = (i == imposterIndex) ? "imposter" : "crewmate";
-                        DatabaseReference playerRef = FirebaseDatabase.getInstance().getReference("room1/" + playerUIDs[i]);
+                        DatabaseReference playerRef = FirebaseDatabase.getInstance().getReference(currentRoom + "/" + playerUIDs[i]);
                         playerRef.child("role").setValue("imposter");
 
                         // Assign username if player UID matches user UID
                         for (int j = 0; j < uids.length; j++) {
-                            if (playerUIDs[i].equals("player_" + uids[j])) {
+                            if (playerUIDs[i] != null && playerUIDs[i].equals("player_" + uids[j])) {
                                 playerRef.child("username").setValue(usernames[j]);
                                 break;
                             }
@@ -312,9 +280,12 @@ public class rooms extends AppCompatActivity {
                         gameStarted = true;
                         int timer = 10;
                         showToast("Starting the game in 10 seconds");
+                        TextView textView = findViewById(R.id.textView6);
                         CountDownTimer countDownTimer = new CountDownTimer(timer * 1000, 1000) {
                             @Override
                             public void onTick(long millisUntilFinished) {
+                                textView.setText("Starting in " + millisUntilFinished / 1000 + " seconds");
+                                textView.setTextSize(25);
                             }
 
                             @Override
@@ -339,8 +310,7 @@ public class rooms extends AppCompatActivity {
         if (intentClosed) {
             return;
         }
-        DatabaseReference verifyRoomsRef = FirebaseDatabase.getInstance().getReference("verifyAvailableRooms");
-        verifyRoomsRef.child("isRoomStarted").setValue(true);
+        verifyAvailableRoomsRef.child(currentRoom + "/isRoomStarted").setValue(true);
 
         Intent intent = new Intent(this, Playground.class);
         startActivity(intent);
@@ -378,11 +348,9 @@ public class rooms extends AppCompatActivity {
         mediaPlayer = MediaPlayer.create(rooms.this, R.raw.button_clicked);
         mediaPlayer.setLooping(false);
         mediaPlayer.start();
-        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            public void onCompletion(MediaPlayer mp) {
-                mediaPlayer.stop();
-                mediaPlayer.release();
-            }
+        mediaPlayer.setOnCompletionListener(mp -> {
+            mediaPlayer.stop();
+            mediaPlayer.release();
         });
     }
 
@@ -390,10 +358,10 @@ public class rooms extends AppCompatActivity {
     public void onBackPressed() {
         intentClosed = true;
         playButtonClickSound();
-        overridePendingTransition(R.anim.fadein, R.anim.fadeout);
-        room1Ref.child("player_" + currentUser.getUid()).removeValue();
+        playersRef.child("player_" + currentUser.getUid()).removeValue();
         super.onBackPressed();
         finish();
+        overridePendingTransition(R.anim.fadein, R.anim.fadeout);
 
     }
 
@@ -409,9 +377,4 @@ public class rooms extends AppCompatActivity {
         super.onDestroy();
 
     }
-
-//    public interface RoomCheckCallback {
-//        void onResult(boolean roomStarted);
-//    }
-
 }

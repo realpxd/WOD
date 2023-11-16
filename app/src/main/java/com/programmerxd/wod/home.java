@@ -27,11 +27,9 @@ import com.google.firebase.database.ValueEventListener;
 public class home extends AppCompatActivity {
 
     private static final int PERMISSION_REQ_ID = 22;
-    private static final String[] REQUESTED_PERMISSIONS = {
-            Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.INTERNET
-    };
-
+    private static final String[] REQUESTED_PERMISSIONS = {Manifest.permission.RECORD_AUDIO, Manifest.permission.INTERNET};
+    DatabaseReference roomRef;
+    DatabaseReference verifyRoomsRef;
     private FirebaseAuth firebaseAuth;
     private DatabaseReference usersRef;
 
@@ -154,8 +152,8 @@ public class home extends AppCompatActivity {
         int numberOfTokens = 5;
         String[] tokens = App.generateTokens(this, numberOfTokens);
 
-        DatabaseReference roomRef = FirebaseDatabase.getInstance().getReference("room1rs");
-        DatabaseReference verifyRoomsRef = FirebaseDatabase.getInstance().getReference("verifyAvailableRooms");
+        roomRef = FirebaseDatabase.getInstance().getReference("verifyAvailableRooms/room1/rs");
+        verifyRoomsRef = FirebaseDatabase.getInstance().getReference("verifyAvailableRooms/room1");
 
         storeTokensInDatabase(tokens, roomRef);
 
@@ -187,11 +185,9 @@ public class home extends AppCompatActivity {
         MediaPlayer mediaPlayer = MediaPlayer.create(home.this, R.raw.button_clicked);
         mediaPlayer.setLooping(false);
         mediaPlayer.start();
-        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            public void onCompletion(MediaPlayer mp) {
-                mediaPlayer.stop();
-                mediaPlayer.release();
-            }
+        mediaPlayer.setOnCompletionListener(mp -> {
+            mediaPlayer.stop();
+            mediaPlayer.release();
         });
     }
 

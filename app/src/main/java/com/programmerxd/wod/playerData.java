@@ -31,9 +31,7 @@ import com.google.firebase.database.ValueEventListener;
  */
 public class playerData extends AppCompatActivity {
 
-    private static final String[] REQUESTED_PERMISSIONS = {
-            Manifest.permission.INTERNET
-    };
+    private static final String[] REQUESTED_PERMISSIONS = {Manifest.permission.INTERNET};
 
     private EditText usernameInput;
     private Button saveUsernameButton;
@@ -99,7 +97,6 @@ public class playerData extends AppCompatActivity {
         });
 
 
-
         // Set click listener for the save username button
         saveUsernameButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -122,6 +119,10 @@ public class playerData extends AppCompatActivity {
                     if (username.length() < 4) {
                         showToast("Username must be at least 4 characters long");
                         return;
+                    } else if (username.length() > 10) {
+                        showToast("Username must be at most 10 characters long");
+                        return;
+
                     }
                     // Check if the username already exists in the database
                     usersRef.orderByChild("username").equalTo(username).addListenerForSingleValueEvent(new ValueEventListener() {
@@ -179,8 +180,7 @@ public class playerData extends AppCompatActivity {
 
     private boolean isValidInput(String input) {
         // Validate that the input contains only letters
-        if(input.isEmpty())
-            return true;
+        if (input.isEmpty()) return true;
         return input.matches("[a-zA-Z]+");
     }
 
