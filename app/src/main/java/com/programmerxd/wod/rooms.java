@@ -43,6 +43,7 @@ public class rooms extends AppCompatActivity {
     ImageView imageView11;
     FirebaseDatabase database;
     DatabaseReference playersRef;
+    DatabaseReference currentRoomRef;
     private FirebaseAuth firebaseAuth;
     private FirebaseUser currentUser;
     private DatabaseReference verifyAvailableRoomsRef;
@@ -82,22 +83,25 @@ public class rooms extends AppCompatActivity {
 
         // Initialize Firebase reference for room verification
         verifyAvailableRoomsRef = FirebaseDatabase.getInstance().getReference("verifyAvailableRooms");
-        playersRef = verifyAvailableRoomsRef.child("verifyAvailableRooms/" + currentRoom + "/players");
+        currentRoomRef = verifyAvailableRoomsRef.child(currentRoom + "/startedBy");
+        playersRef = verifyAvailableRoomsRef.child(currentRoom + "/players");
 //        playersRef = verifyAvailableRoomsRef.child(currentRoom);
 
         // Check if the current user is assigned to room1
-        playersRef.addListenerForSingleValueEvent(new ValueEventListener() {
+
+        currentRoomRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists() && dataSnapshot.getValue().equals(currentUser.getUid())) {
+                if (dataSnapshot.exists() && dataSnapshot.getKey().equals("startedBy") && dataSnapshot.getValue().equals(currentUser.getUid())) {
                     isHost = true;
                     collectPlayers();
                     handler = new Handler();
                     startCheckingPlayers();
                 } else if (dataSnapshot.exists()) {
+                    showToast("Error : " + dataSnapshot.getValue());
 
                 } else {
-
+                    showToast("Error : " + dataSnapshot.getValue());
                 }
             }
 
@@ -142,7 +146,7 @@ public class rooms extends AppCompatActivity {
                         verifyAvailableRoomsRef.addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                if (snapshot.exists() && Objects.equals(snapshot.child(currentRoom + "/isRoomStarted").getValue(), true)) {
+                                if (snapshot.exists() && snapshot.child(currentRoom + "/isRoomStarted").getValue().equals(true)) {
                                     showToast("Room is already started");
                                 } else if (snapshot.child(currentRoom + "/isRoomStarted").getValue() != null && snapshot.child(currentRoom + "/isRoomStarted").getValue().equals(false)) {
 
@@ -263,7 +267,7 @@ public class rooms extends AppCompatActivity {
 
                     for (int i = 0; i < playerCount; i++) {
                         String role = (i == imposterIndex) ? "imposter" : "crewmate";
-                        DatabaseReference playerRef = FirebaseDatabase.getInstance().getReference(currentRoom + "/" + playerUIDs[i]);
+                        DatabaseReference playerRef = verifyAvailableRoomsRef.child(currentRoom + "/players/" + playerUIDs[i]);
                         playerRef.child("role").setValue("imposter");
 
                         // Assign username if player UID matches user UID

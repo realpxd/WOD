@@ -80,8 +80,10 @@ public class Playground extends AppCompatActivity {
     Boolean didImposterLeft = false;
     Boolean isEmergencyMeetingTriggered = false;
     // DatabaseReference for room1rs
-    private DatabaseReference room1rsRef;
-    private DatabaseReference room1Ref;
+    private DatabaseReference currentRoomRsRef;
+    private DatabaseReference currentRoomRef;
+    private DatabaseReference verifyAvailableRoomsRef;
+    private final String currentRoom = "room1";
     // Flag to check if the local user has joined a channel
     private boolean isJoined = false;
     // Agora RTC engine event handler to handle real-time communication events
@@ -123,8 +125,8 @@ public class Playground extends AppCompatActivity {
     private int time_countdown = 10;
     // Role assigned to the current user (e.g., imposter or crewmate)
     private String role;
-        private String[] allPlayerRoles;
-//    private String[] allPlayerRoles = new String[10]; // Initialize with appropriate size
+//    private String[] allPlayerRoles;
+    private String[] allPlayerRoles = new String[10]; // Initialize with appropriate size
 
     // Countdown timer for certain game actions
     private CountDownTimer countdownTimer;
@@ -170,6 +172,7 @@ public class Playground extends AppCompatActivity {
         textCurrentRadioServerFrequency = findViewById(R.id.currentRadioServerFrequency);
         // Get reference to the microphone icon ImageView
         microphoneIcon = findViewById(R.id.microphoneIcon);
+        verifyAvailableRoomsRef = FirebaseDatabase.getInstance().getReference("verifyAvailableRooms");
 
         // Request necessary permissions if not granted
         if (!checkSelfPermission()) {
@@ -224,8 +227,8 @@ public class Playground extends AppCompatActivity {
         });
 
         // Get the user's role from the "room1" node in Firebase
-        DatabaseReference room1Ref = FirebaseDatabase.getInstance().getReference("room1");
-        room1Ref.addValueEventListener(new ValueEventListener() {
+        currentRoomRef = verifyAvailableRoomsRef.child(currentRoom + "/players");
+        currentRoomRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
 //                boolean roleFound = false;
@@ -278,8 +281,8 @@ public class Playground extends AppCompatActivity {
         });
 
         // Get available radio server tokens from the "room1rs" node in Firebase
-        room1rsRef = FirebaseDatabase.getInstance().getReference("room1rs");
-        room1rsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+        currentRoomRsRef = verifyAvailableRoomsRef.child(currentRoom + "/rs");
+        currentRoomRsRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
@@ -578,8 +581,8 @@ public class Playground extends AppCompatActivity {
                 for (String playerName : playerNames) {
                     if (saidPlayerName.equals(playerName) || saidPlayerName.equalsIgnoreCase(playerName)) {
                         nameMatched = true;
-                        room1Ref = FirebaseDatabase.getInstance().getReference("room1");
-                        room1Ref.addListenerForSingleValueEvent(new ValueEventListener() {
+//                        room1Ref = FirebaseDatabase.getInstance().getReference("room1");
+                        currentRoomRef.addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot snapshot) {
                                 for (DataSnapshot playerSnapshot : snapshot.getChildren()) {
@@ -825,8 +828,8 @@ public class Playground extends AppCompatActivity {
      * @param action The action to be performed in the playground.
      */
     private void startPlayground(String action) {
-        // Listen for a single value event on the room1rsRef node
-        room1rsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+        // Listen for a single value event on the currentRoomRsRef node
+        currentRoomRsRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 List<String> names = new ArrayList<>(); // Use a dynamic list to store player names
@@ -1075,20 +1078,20 @@ public class Playground extends AppCompatActivity {
 
     private void removePlayer() {
         // Remove the current player's data from the database
-        DatabaseReference room1Ref = FirebaseDatabase.getInstance().getReference("room1");
+//        DatabaseReference room1Ref = FirebaseDatabase.getInstance().getReference("room1");
         currentRoomData = FirebaseDatabase.getInstance().getReference("verifyAvailableRooms");
 
-        room1Ref.child("player_" + currentUser.getUid()).removeValue();
+        currentRoomRef.child("player_" + currentUser.getUid()).removeValue();
 
-//        room1rsRef.child(channelName).child("players").child(currentUser.getUid()).removeValue();
+//        currentRoomRsRef.child(channelName).child("players").child(currentUser.getUid()).removeValue();
         if (role.equals("imposter")) {
             DatabaseReference setImposterLeft = FirebaseDatabase.getInstance().getReference("broadcastingInformation");
             setImposterLeft.child("didImposterLeft").setValue(true);
 
 //            showToast("Crewmates won the game!");
 
-            currentRoomData.child("room1").removeValue();
-            currentRoomData.child("isRoomStarted").setValue(false);
+            currentRoomData.child(currentRoom).removeValue();
+//            currentRoomData.child("isRoomStarted").setValue(false);
         }
         broadcastingRef.removeValue();
 

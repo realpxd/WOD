@@ -178,7 +178,7 @@ public class home extends AppCompatActivity {
 
     private void storeUserUidInDatabase(FirebaseUser currentUser, DatabaseReference verifyRoomsRef) {
         String uid = currentUser.getUid();
-        verifyRoomsRef.child("room1").setValue(uid);
+        verifyRoomsRef.child("startedBy").setValue(uid);
     }
 
     private void playButtonClickSound() {
