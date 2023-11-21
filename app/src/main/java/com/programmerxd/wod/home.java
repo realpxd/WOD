@@ -95,6 +95,7 @@ public class home extends AppCompatActivity {
     private void setTextView5(String username) {
         TextView textView5 = findViewById(R.id.textView5);
         textView5.setText(username + "'s Home ");
+        textView5.setTextColor(getResources().getColor(R.color.white));
     }
 
     private void showToast(String message) {
@@ -103,16 +104,19 @@ public class home extends AppCompatActivity {
 
     private void setNoInternetConnection() {
         TextView textView5 = findViewById(R.id.textView5);
-        textView5.setText("NO INTERNET CONNECTION !");
-        textView5.setTextColor(getResources().getColor(R.color.red));
+        textView5.setText("Internet Error");
+        textView5.setTextColor(getResources().getColor(R.color.black));
     }
 
-    public void startMusic(View view) {
-        Intent serviceIntent = new Intent(this, AudioService.class);
-        startService(serviceIntent);
-    }
+//    public void startMusic(View view) {
+//        Intent serviceIntent = new Intent(this, AudioService.class);
+//        startService(serviceIntent);
+//    }
 
     public void startGame(View view) {
+        Intent serviceIntent = new Intent(this, AudioService.class);
+        startService(serviceIntent);
+
         if (!isNetworkAvailable()) {
             showToast("No Internet Connection");
             setNoInternetConnection();
@@ -122,9 +126,6 @@ public class home extends AppCompatActivity {
             showToast("In order to play the game , you must grant the mic permission.");
             return;
         }
-
-        Intent serviceIntent = new Intent(this, AudioService.class);
-        startService(serviceIntent);
 
         playButtonClickSound();
 
@@ -134,6 +135,9 @@ public class home extends AppCompatActivity {
     }
 
     public void hostGame(View view) {
+        Intent serviceIntent = new Intent(this, AudioService.class);
+        startService(serviceIntent);
+
         if (!isNetworkAvailable()) {
             showToast("No Internet Connection");
             setNoInternetConnection();
@@ -144,8 +148,6 @@ public class home extends AppCompatActivity {
             return;
         }
 
-        Intent serviceIntent = new Intent(this, AudioService.class);
-        startService(serviceIntent);
 
         playButtonClickSound();
 
@@ -166,6 +168,11 @@ public class home extends AppCompatActivity {
 
         Intent intent = new Intent(this, rooms.class);
         startActivity(intent);
+    }
+
+    public void openSettings(View view){
+        showToast("Under Construction");
+        playButtonClickSound();
     }
 
     private void storeTokensInDatabase(String[] tokens, DatabaseReference roomRef) {

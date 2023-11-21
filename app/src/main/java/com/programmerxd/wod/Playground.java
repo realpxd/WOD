@@ -20,6 +20,7 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -56,6 +57,7 @@ public class Playground extends AppCompatActivity {
 
     // Array to hold the 5 channels frequency
     private final String[] currentRadioServerFrequency = {"72.34", "24.57", "92.64", "39.23", "58.79"};
+    private String frequency;
 
     // Agora Console App ID
     private final String appId = "3f393ce1fa6b4c6b80495f09c07f5d34";
@@ -91,20 +93,20 @@ public class Playground extends AppCompatActivity {
         @Override
         // Listen for the remote user joining the channel.
         public void onUserJoined(int uid, int elapsed) {
-            runOnUiThread(() -> Toast.makeText(Playground.this, "Remote user joined: " + uid, Toast.LENGTH_SHORT).show());
+//            runOnUiThread(() -> Toast.makeText(Playground.this, "Remote user joined: " + uid, Toast.LENGTH_SHORT).show());
         }
 
         @Override
         // Triggered when the local user successfully joins the channel
         public void onJoinChannelSuccess(String channel, int uid, int elapsed) {
             isJoined = true;
-            runOnUiThread(() -> Toast.makeText(Playground.this, "Joined Channel", Toast.LENGTH_SHORT).show());
+//            runOnUiThread(() -> Toast.makeText(Playground.this, "Joined Channel", Toast.LENGTH_SHORT).show());
         }
 
         @Override
         // Triggered when a remote user goes offline
         public void onUserOffline(int uid, int reason) {
-            runOnUiThread(() -> Toast.makeText(Playground.this, "Remote user offline", Toast.LENGTH_SHORT).show());
+//            runOnUiThread(() -> Toast.makeText(Playground.this, "Remote user offline", Toast.LENGTH_SHORT).show());
         }
 
         @Override
@@ -422,9 +424,9 @@ public class Playground extends AppCompatActivity {
         horizontalLayout.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         horizontalLayout.setOrientation(LinearLayout.HORIZONTAL);
 
-        int i = 0;
         // Iterate through each player name
-        for (String playerName : playerNames) {
+        for (int i = 0; i < playerNames.length; i++) {
+            String playerName = playerNames[i];
             if (playerName != null) {
                 // Create a vertical layout for each player
                 LinearLayout playerLayout = new LinearLayout(this);
@@ -433,7 +435,6 @@ public class Playground extends AppCompatActivity {
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
                 playerLayout.setOrientation(LinearLayout.VERTICAL);
                 playerLayout.setPadding(dpToPx(5), dpToPx(5), dpToPx(5), dpToPx(5));
-//                params.weight = 1;
                 params.setMarginEnd(dpToPx(20));
                 params.setMarginStart(dpToPx(20));
                 playerLayout.setLayoutParams(params);
@@ -443,12 +444,13 @@ public class Playground extends AppCompatActivity {
                 LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(dpToPx(50), dpToPx(50));
                 playerImage.setLayoutParams(imageParams);
 
+                // Set the appropriate image resource based on player role
                 if (playerRoles[i].equals("dead")) {
                     playerImage.setImageResource(R.drawable.dead_toast);
                 } else {
                     playerImage.setImageResource(R.drawable.player_pfp);
                 }
-                i++;
+
                 // Create a TextView for the player name
                 TextView playerNameTextView = new TextView(this);
                 playerNameTextView.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -622,6 +624,120 @@ public class Playground extends AppCompatActivity {
 
                             }
                         });
+
+
+
+
+
+                        currentRoomRsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(DataSnapshot dataSnapshot) {
+
+                                List<String> names = new ArrayList<>(); // Use a dynamic list to store player names
+                                List<String> allPlayersRoles = new ArrayList<>(); // Use a dynamic list to store player names
+
+                                // Check if the data snapshot exists
+                                if (dataSnapshot.exists()) {
+                                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                                        // Check if a valid randomIndex is available
+                                        if (randomIndex != -1) {
+                                            if (channelNames[randomIndex].equals(snapshot.getKey())) {
+
+
+                                                DatabaseReference allPlayerRef = snapshot.getRef().child("players");
+                                                DatabaseReference curPlayerRef = snapshot.getRef().child("players").child(currentUser.getUid());
+
+                                                // Set the current player's role in the database
+                                                curPlayerRef.child(username).setValue(role);
+
+                                                // Listen for a single value event on the allPlayerRef node
+                                                allPlayerRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                                                    @Override
+                                                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+
+
+                                                        int i = 0;
+
+                                                        // Iterate through playerSnapshot in the snapshot
+                                                        for (DataSnapshot playerSnapshot : snapshot.getChildren()) {
+
+
+                                                            // Get player name from the iterators next key
+                                                            String playerNameTwo = String.valueOf(playerSnapshot.getChildren().iterator().next().getKey());
+                                                            String playerRole = String.valueOf(playerSnapshot.getChildren().iterator().next().getValue());
+
+
+                                                                if (playerNameTwo != null) {
+                                                                    if (playerNameTwo.equalsIgnoreCase(saidPlayerName)) {
+                                                                        if (playerRole != null) {
+                                                                            if (playerRole.equals("imposter")) {
+                                                                                showToast("You cannot kill yourself");
+                                                                                displayToast("Trying to Suicide ? :)");
+                                                                            } else if (playerRole.equals("crewmate")) {
+                                                                                showToast("Killing " + playerName);
+                                                                                DatabaseReference curPlayerRef = playerSnapshot.getRef().child(playerNameTwo);
+                                                                                curPlayerRef.setValue("dead");
+                                                                                startPlayground("update");
+                                                                                displayToast("killing " + playerNameTwo);
+                                                                            }else if (playerRole.equals("dead")) {
+                                                                                showToast("Player is already dead");
+                                                                                displayToast("RIP Already!");
+                                                                            } else {
+                                                                                showToast("Player not found , No-one was killed");
+                                                                                displayToast("No such player");
+                                                                            }
+                                                                        }
+                                                                    }else{
+                                                                    }
+                                                                }
+
+
+
+
+
+
+
+                                                            // Check if the playerNameTwo is not null
+                                                            if (playerNameTwo != null) {
+                                                                names.add(playerNameTwo); // Add names to the list
+                                                            }
+                                                            if (playerRole != null) {
+                                                                allPlayersRoles.add(playerRole);
+                                                            }
+                                                            i++;
+                                                        }
+
+                                                        // Convert the list to an array
+                                                        String[] playerNamesTwo = names.toArray(new String[0]);
+                                                        String[] playersRoles = allPlayersRoles.toArray(new String[0]);
+
+                                                        // Call method to create player views
+                                                        createPlayerView(playerNamesTwo , playersRoles);
+                                                    }
+
+                                                    @Override
+                                                    public void onCancelled(@NonNull DatabaseError error) {
+                                                        // Handle errors during data retrieval
+                                                    }
+                                                });
+                                            } else {
+                                                // Remove the current player's data if not in the correct channel
+                                                DatabaseReference curPlayerRef = snapshot.getRef().child("players").child(currentUser.getUid());
+                                                curPlayerRef.removeValue();
+                                            }
+                                        } else {
+                                            // Handle the case when randomIndex is not valid
+                                        }
+                                    }
+                                }
+                            }
+
+                            @Override
+                            public void onCancelled(DatabaseError databaseError) {
+                                // Display a toast in case of an error during data retrieval
+                                showToast("Error: " + databaseError.getMessage());
+                            }
+                        });
                         break;
                     }
 
@@ -774,7 +890,8 @@ public class Playground extends AppCompatActivity {
 
             // Get the token at the randomly generated index and display the corresponding frequency
             String userToken = currentRadioServer[randomIndex];
-            textCurrentRadioServerFrequency.setText(currentRadioServerFrequency[randomIndex]);
+            frequency = currentRadioServerFrequency[randomIndex];
+            setTextCurrentRadioServerFrequency(frequency);
 
             // Connect to the communication channel using the assigned token
             connectToChannel(userToken);
@@ -923,8 +1040,8 @@ public class Playground extends AppCompatActivity {
         if (randomIndex < 0) randomIndex = 4;
 
         // Update the UI with the frequency and channel name of the new server
-        TextView textCurrentRadioServerFrequency = findViewById(R.id.currentRadioServerFrequency);
-        textCurrentRadioServerFrequency.setText(currentRadioServerFrequency[randomIndex]);
+        frequency = currentRadioServerFrequency[randomIndex];
+        setTextCurrentRadioServerFrequency(frequency);
         channelName = channelNames[randomIndex];
 
         // Leave the current channel and connect to the new channel
@@ -943,15 +1060,32 @@ public class Playground extends AppCompatActivity {
         if (randomIndex > 4) randomIndex = 0;
 
         // Update the UI with the frequency and channel name of the new server
-        textCurrentRadioServerFrequency = findViewById(R.id.currentRadioServerFrequency);
-        textCurrentRadioServerFrequency.setText(currentRadioServerFrequency[randomIndex]);
+        frequency = currentRadioServerFrequency[randomIndex];
+        setTextCurrentRadioServerFrequency(frequency);
         channelName = channelNames[randomIndex];
 
         // Leave the current channel and connect to the new channel
         agoraEngine.leaveChannel();
         connectToChannel(currentRadioServer[randomIndex]);
     }
+    private void setTextCurrentRadioServerFrequency(String frequency){
+        CountDownTimer countDownTimer = new CountDownTimer(500 , 10) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                randomIndex = new Random().nextInt(currentRadioServer.length);
+                textCurrentRadioServerFrequency.setText(currentRadioServerFrequency[randomIndex]);
 
+            }
+
+            @Override
+            public void onFinish() {
+                showToast(frequency);
+                textCurrentRadioServerFrequency.setText(frequency);
+
+            }
+        }.start();
+
+    }
 
     /**
      * Handles the push-to-talk functionality.
