@@ -98,10 +98,10 @@ public class rooms extends AppCompatActivity {
                     handler = new Handler();
                     startCheckingPlayers();
                 } else if (dataSnapshot.exists()) {
-                    showToast("Error : " + dataSnapshot.getValue());
+//                    showToast("Error : " + dataSnapshot.getValue());
 
                 } else {
-                    showToast("Error : " + dataSnapshot.getValue());
+//                    showToast("Error : " + dataSnapshot.getValue());
                 }
             }
 
@@ -124,7 +124,7 @@ public class rooms extends AppCompatActivity {
     private void nullRoomClickListener(ImageView imageView) {
         imageView.setOnClickListener(v -> {
             playButtonClickSound();
-            showToast("Room not found.");
+            showToast("Room under construction.");
         });
     }
 
@@ -268,7 +268,7 @@ public class rooms extends AppCompatActivity {
                     for (int i = 0; i < playerCount; i++) {
                         String role = (i == imposterIndex) ? "imposter" : "crewmate";
                         DatabaseReference playerRef = verifyAvailableRoomsRef.child(currentRoom + "/players/" + playerUIDs[i]);
-                        playerRef.child("role").setValue("imposter");
+                        playerRef.child("role").setValue(role);
 
                         // Assign username if player UID matches user UID
                         for (int j = 0; j < uids.length; j++) {

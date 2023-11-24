@@ -12,9 +12,11 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -26,6 +28,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -57,23 +60,18 @@ public class Playground extends AppCompatActivity {
 
     // Array to hold the 5 channels frequency
     private final String[] currentRadioServerFrequency = {"72.34", "24.57", "92.64", "39.23", "58.79"};
-    private String frequency;
-
     // Agora Console App ID
     private final String appId = "3f393ce1fa6b4c6b80495f09c07f5d34";
-
     // Array containing channel names
     private final String[] channelNames = {"rs1", "rs2", "rs3", "rs4", "rs5"};
-
     // An integer that identifies the local user
     private final int uid = 0;
-
+    private final String currentRoom = "room1";
+    private final String[] playerNames = new String[10];
     // Default channel name
     public String channelName = channelNames[0];
-
     // ImageView for role indication
     ImageView roleIndicator;
-
     // Flag to track if the player role container is clicked
     boolean isPlayerRoleContainerClicked = true;
     TextView notificationToast;
@@ -81,11 +79,12 @@ public class Playground extends AppCompatActivity {
     TextView infoText;
     Boolean didImposterLeft = false;
     Boolean isEmergencyMeetingTriggered = false;
+    DatabaseReference currentRoomData;
+    private String frequency;
     // DatabaseReference for room1rs
     private DatabaseReference currentRoomRsRef;
     private DatabaseReference currentRoomRef;
     private DatabaseReference verifyAvailableRoomsRef;
-    private final String currentRoom = "room1";
     // Flag to check if the local user has joined a channel
     private boolean isJoined = false;
     // Agora RTC engine event handler to handle real-time communication events
@@ -127,9 +126,8 @@ public class Playground extends AppCompatActivity {
     private int time_countdown = 10;
     // Role assigned to the current user (e.g., imposter or crewmate)
     private String role;
-//    private String[] allPlayerRoles;
+    //    private String[] allPlayerRoles;
     private String[] allPlayerRoles = new String[10]; // Initialize with appropriate size
-
     // Countdown timer for certain game actions
     private CountDownTimer countdownTimer;
     // Flag to indicate the microphone state (on or off)
@@ -145,12 +143,19 @@ public class Playground extends AppCompatActivity {
     // Firebase user representing the current user
     private FirebaseUser currentUser;
     private MediaPlayer gameStartVoicePlayer;
-    private final String[] playerNames = new String[10];
     private boolean isPlayerDead = false;
     private String[] deadPlayers = new String[10];
     private ImageView microphoneIcon;
     private DatabaseReference broadcastingRef;
-    DatabaseReference currentRoomData;
+    private RelativeLayout emergencyMeetingWrapper;
+    private RelativeLayout emergencyMeetingContainerSpliter1, emergencyMeetingContainerSpliter2;
+    private LinearLayout emmpc1, emmpc2, emmpc3, emmpc4;
+    private TextView meetingCooldown;
+    private int eccount = 0;
+    private int eccount2 = 0;
+    private boolean isPlayerSelectedOnEmergencyMeeting = false;
+    private String selectedPlayerOnEmergencyMeeting = "";
+    private boolean hasVoted = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -175,6 +180,15 @@ public class Playground extends AppCompatActivity {
         // Get reference to the microphone icon ImageView
         microphoneIcon = findViewById(R.id.microphoneIcon);
         verifyAvailableRoomsRef = FirebaseDatabase.getInstance().getReference("verifyAvailableRooms");
+
+        emergencyMeetingWrapper = findViewById(R.id.emergencyMeetingWrapper);
+        emergencyMeetingContainerSpliter1 = findViewById(R.id.emergencyMeetingContainerSpliter1);
+        emergencyMeetingContainerSpliter2 = findViewById(R.id.emergencyMeetingContainerSpliter2);
+        emmpc1 = findViewById(R.id.EmergencyMeetingMaxPlayersContainer1);
+        emmpc2 = findViewById(R.id.EmergencyMeetingMaxPlayersContainer2);
+        emmpc3 = findViewById(R.id.EmergencyMeetingMaxPlayersContainer3);
+        emmpc4 = findViewById(R.id.EmergencyMeetingMaxPlayersContainer4);
+        meetingCooldown = findViewById(R.id.meetingCooldown);
 
         // Request necessary permissions if not granted
         if (!checkSelfPermission()) {
@@ -339,12 +353,6 @@ public class Playground extends AppCompatActivity {
                         showToast("Imposter left the game");
 //                        gameOver(role);
                     }
-                } else if (snapshot.getKey().equals("isEmergencyMeetingTriggered")) {
-                    if (snapshot.getValue().equals(true)) {
-                        isEmergencyMeetingTriggered = true;
-                        showToast("Emergency meeting triggered");
-//                        callEmergencyMeeting();
-                    }
                 }
             }
 
@@ -370,6 +378,24 @@ public class Playground extends AppCompatActivity {
         };
         childEventListener = broadcastingRef.addChildEventListener(childEventListener);
 
+        broadcastingRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    if (snapshot.child("isEmergencyMeetingTriggered").getValue().equals(true)) {
+                        isEmergencyMeetingTriggered = true;
+                        showToast("Emergency meeting triggered");
+                        emergencyMeeting();
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+
     }
 
     private void gameOver(String winner) {
@@ -379,9 +405,9 @@ public class Playground extends AppCompatActivity {
         }
     }
 
-    private void callEmergencyMeeting() {
-        showToast("Emergency meeting called");
-    }
+//    private void callEmergencyMeeting() {
+//        showToast("Emergency meeting called");
+//    }
 
     private void startRoomCountdown() {
         // Set the countdown time to 10 minutes (600 seconds)
@@ -604,7 +630,7 @@ public class Playground extends AppCompatActivity {
                                                         curPlayerRef.setValue("dead");
                                                         startPlayground("update");
                                                         displayToast("killing " + playerUserName);
-                                                    }else if (playerRole.equals("dead")) {
+                                                    } else if (playerRole.equals("dead")) {
                                                         showToast("Player is already dead");
                                                         displayToast("RIP Already!");
                                                     } else {
@@ -612,7 +638,7 @@ public class Playground extends AppCompatActivity {
                                                         displayToast("No such player");
                                                     }
                                                 }
-                                            }else{
+                                            } else {
                                             }
                                         }
                                     }
@@ -624,9 +650,6 @@ public class Playground extends AppCompatActivity {
 
                             }
                         });
-
-
-
 
 
                         currentRoomRsRef.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -667,34 +690,29 @@ public class Playground extends AppCompatActivity {
                                                             String playerRole = String.valueOf(playerSnapshot.getChildren().iterator().next().getValue());
 
 
-                                                                if (playerNameTwo != null) {
-                                                                    if (playerNameTwo.equalsIgnoreCase(saidPlayerName)) {
-                                                                        if (playerRole != null) {
-                                                                            if (playerRole.equals("imposter")) {
-                                                                                showToast("You cannot kill yourself");
-                                                                                displayToast("Trying to Suicide ? :)");
-                                                                            } else if (playerRole.equals("crewmate")) {
-                                                                                showToast("Killing " + playerName);
-                                                                                DatabaseReference curPlayerRef = playerSnapshot.getRef().child(playerNameTwo);
-                                                                                curPlayerRef.setValue("dead");
-                                                                                startPlayground("update");
-                                                                                displayToast("killing " + playerNameTwo);
-                                                                            }else if (playerRole.equals("dead")) {
-                                                                                showToast("Player is already dead");
-                                                                                displayToast("RIP Already!");
-                                                                            } else {
-                                                                                showToast("Player not found , No-one was killed");
-                                                                                displayToast("No such player");
-                                                                            }
+                                                            if (playerNameTwo != null) {
+                                                                if (playerNameTwo.equalsIgnoreCase(saidPlayerName)) {
+                                                                    if (playerRole != null) {
+                                                                        if (playerRole.equals("imposter")) {
+                                                                            showToast("You cannot kill yourself");
+                                                                            displayToast("Trying to Suicide ? :)");
+                                                                        } else if (playerRole.equals("crewmate")) {
+                                                                            showToast("Killing " + playerName);
+                                                                            DatabaseReference curPlayerRef = playerSnapshot.getRef().child(playerNameTwo);
+                                                                            curPlayerRef.setValue("dead");
+                                                                            startPlayground("update");
+                                                                            displayToast("killing " + playerNameTwo);
+                                                                        } else if (playerRole.equals("dead")) {
+                                                                            showToast("Player is already dead");
+                                                                            displayToast("RIP Already!");
+                                                                        } else {
+                                                                            showToast("Player not found , No-one was killed");
+                                                                            displayToast("No such player");
                                                                         }
-                                                                    }else{
                                                                     }
+                                                                } else {
                                                                 }
-
-
-
-
-
+                                                            }
 
 
                                                             // Check if the playerNameTwo is not null
@@ -712,7 +730,7 @@ public class Playground extends AppCompatActivity {
                                                         String[] playersRoles = allPlayersRoles.toArray(new String[0]);
 
                                                         // Call method to create player views
-                                                        createPlayerView(playerNamesTwo , playersRoles);
+                                                        createPlayerView(playerNamesTwo, playersRoles);
                                                     }
 
                                                     @Override
@@ -751,17 +769,18 @@ public class Playground extends AppCompatActivity {
                     displayToast("No such player");
                 }
 
-            }else{
+            } else {
 //                showToast("Invalid command");
                 displayToast("Invalid command");
             }
-        }else{
+        } else {
 //            showToast("Invalid command");
             displayToast("Invalid command");
         }
 
     }
-    private void displayToast(String message){
+
+    private void displayToast(String message) {
 
         infoText.setVisibility(View.GONE);
         textCurrentRadioServerFrequency.setVisibility(View.GONE);
@@ -829,6 +848,8 @@ public class Playground extends AppCompatActivity {
                 // If the player is not an imposter, show a toast indicating the player's tasks
                 showToast("Your tasks");
                 isPlayerRoleContainerClicked = true;
+                emergencyMeetingWrapper.setVisibility(View.VISIBLE);
+                emergencyMeetingContainerSpliter1.setVisibility(View.VISIBLE);
             } else if (role.equals("dead")) {
                 displayToast("You are dead");
                 isPlayerRoleContainerClicked = true;
@@ -991,7 +1012,7 @@ public class Playground extends AppCompatActivity {
                                         String[] playersRoles = allPlayersRoles.toArray(new String[0]);
 
                                         // Call method to create player views
-                                        createPlayerView(playerNamesTwo , playersRoles);
+                                        createPlayerView(playerNamesTwo, playersRoles);
                                     }
 
                                     @Override
@@ -1040,8 +1061,7 @@ public class Playground extends AppCompatActivity {
         if (randomIndex < 0) randomIndex = 4;
 
         // Update the UI with the frequency and channel name of the new server
-        frequency = currentRadioServerFrequency[randomIndex];
-        setTextCurrentRadioServerFrequency(frequency);
+        textCurrentRadioServerFrequency.setText(currentRadioServerFrequency[randomIndex]);
         channelName = channelNames[randomIndex];
 
         // Leave the current channel and connect to the new channel
@@ -1060,16 +1080,16 @@ public class Playground extends AppCompatActivity {
         if (randomIndex > 4) randomIndex = 0;
 
         // Update the UI with the frequency and channel name of the new server
-        frequency = currentRadioServerFrequency[randomIndex];
-        setTextCurrentRadioServerFrequency(frequency);
+        textCurrentRadioServerFrequency.setText(currentRadioServerFrequency[randomIndex]);
         channelName = channelNames[randomIndex];
 
         // Leave the current channel and connect to the new channel
         agoraEngine.leaveChannel();
         connectToChannel(currentRadioServer[randomIndex]);
     }
-    private void setTextCurrentRadioServerFrequency(String frequency){
-        CountDownTimer countDownTimer = new CountDownTimer(500 , 10) {
+
+    private void setTextCurrentRadioServerFrequency(String frequency) {
+        CountDownTimer countDownTimer = new CountDownTimer(500, 10) {
             @Override
             public void onTick(long millisUntilFinished) {
                 randomIndex = new Random().nextInt(currentRadioServer.length);
@@ -1079,7 +1099,6 @@ public class Playground extends AppCompatActivity {
 
             @Override
             public void onFinish() {
-                showToast(frequency);
                 textCurrentRadioServerFrequency.setText(frequency);
 
             }
@@ -1120,6 +1139,178 @@ public class Playground extends AppCompatActivity {
 
     public void disableOtherClickEvents(View view) {
         return;
+    }
+
+    public void callEmergencyMeetingButton(View view) {
+        callEmergencyMeeting();
+    }
+
+    private void callEmergencyMeeting() {
+        //some code
+
+        DatabaseReference isEmergencyMeetingTriggered = FirebaseDatabase.getInstance().getReference("broadcastingInformation");
+        isEmergencyMeetingTriggered.child("isEmergencyMeetingTriggered").setValue(true);
+    }
+
+    private void emergencyMeeting() {
+        emergencyMeetingWrapper.setVisibility(View.VISIBLE);
+        emergencyMeetingContainerSpliter1.setVisibility(View.GONE);
+        emergencyMeetingContainerSpliter2.setVisibility(View.VISIBLE);
+        CountDownTimer cooldown = new CountDownTimer(30000, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                meetingCooldown.setText("Cooldown : " + millisUntilFinished / 1000 + "s");
+            }
+            @Override
+            public void onFinish() {
+                showToast("Cooldown finished");
+                DatabaseReference isEmergencyMeetingTriggered = FirebaseDatabase.getInstance().getReference("broadcastingInformation");
+                isEmergencyMeetingTriggered.child("isEmergencyMeetingTriggered").setValue(false);
+
+                kickPlayer();
+
+            }
+        }.start();
+
+
+        LinearLayout EmergencyMeetingPlayerContainerWrapper = findViewById(R.id.EmergencyMeetingPlayerContainerWrapper);
+//        EmergencyMeetingPlayerContainerWrapper.removeAllViews();
+
+//        horizontalContainer.setId(R.id.EmergencyMeetingHorizontalPlayerContainer);
+
+//        for (int i = 0; i < 3; i++) {
+//            LinearLayout verticalContainer = createVerticalContainer(this);
+//            ImageView imageView = createImageView(this);
+//            TextView textView = createTextView(this, playersNames[i]);
+
+//            verticalContainer.addView(imageView);
+//            verticalContainer.addView(textView);
+
+//            horizontalContainer.addView(verticalContainer);
+//        }
+
+        eccount = 0;
+        currentRoomRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                for (DataSnapshot playerSnapshot : snapshot.getChildren()) {
+                    String playerUID = playerSnapshot.getKey();
+                    if (playerUID != null) {
+                        String playerUserName = playerSnapshot.child("username").getValue(String.class);
+                        if (playerUserName != null) {
+                            String playerRole = playerSnapshot.child("role").getValue(String.class);
+                            if (playerRole != null) {
+                                LinearLayout verticalContainer = new LinearLayout(Playground.this);
+
+                                verticalContainer.setOrientation(LinearLayout.VERTICAL);
+                                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                                        LinearLayout.LayoutParams.WRAP_CONTENT
+                                );
+                                params.setMargins(10, 0, 10, 0);
+                                params.weight = 1;
+                                verticalContainer.setLayoutParams(params);
+                                verticalContainer.setOnClickListener(v -> playerSelectedOnEmergencyMeeting(playerUserName));
+
+                                ImageView imageView = new ImageView(Playground.this);
+                                imageView.setLayoutParams(new LinearLayout.LayoutParams(
+                                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                                        ViewGroup.LayoutParams.WRAP_CONTENT));
+                                imageView.setImageResource(R.drawable.player_pfp); // Set default image resource
+
+                                LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(dpToPx(50), dpToPx(50));
+                                imageView.setLayoutParams(imageParams);
+
+
+                                TextView textView = new TextView(Playground.this);
+                                textView.setLayoutParams(new LinearLayout.LayoutParams(
+                                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                                        ViewGroup.LayoutParams.WRAP_CONTENT));
+                                textView.setText(playerUserName);
+                                textView.setTextSize(20);
+                                textView.setTextColor(getResources().getColor(R.color.white));
+                                textView.setGravity(Gravity.CENTER);
+                                textView.setTypeface(ResourcesCompat.getFont(Playground.this, R.font.vertigo_flf_bold));
+
+                                verticalContainer.addView(imageView);
+                                verticalContainer.addView(textView);
+                                eccount++;
+                                if (eccount2 == 0) {
+                                    emmpc1.addView(verticalContainer);
+                                } else if (eccount2 == 1) {
+                                    emmpc2.addView(verticalContainer);
+                                } else if (eccount2 == 2) {
+                                    emmpc3.addView(verticalContainer);
+                                } else {
+                                    emmpc4.addView(verticalContainer);
+                                }
+
+                                if (eccount == 3) {
+                                    eccount = 0;
+                                    eccount2++;
+//                                    showToast("eccount2 : " + eccount2);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+
+
+    }
+
+    private void playerSelectedOnEmergencyMeeting(String playerName) {
+        if(hasVoted){
+            showToast("You have already voted");
+            return;
+        }
+        showToast("Player selected : " + playerName);
+        isPlayerSelectedOnEmergencyMeeting = true;
+        selectedPlayerOnEmergencyMeeting = playerName;
+    }
+
+    public void submitVote(View view){
+        if(hasVoted){
+            showToast("You have already voted");
+            return;
+        }
+        if (isPlayerSelectedOnEmergencyMeeting) {
+            showToast("Vote submitted");
+            //set text as voted in this view
+            Button voteBtn = findViewById(R.id.button3);
+            voteBtn.setText("Voted");
+            voteBtn.setBackgroundColor(getResources().getColor(R.color.purple));
+            hasVoted = true;
+        } else {
+            showToast("No player selected");
+        }
+
+    }
+
+    private void kickPlayer() {
+        if (isPlayerSelectedOnEmergencyMeeting) {
+            showToast("Player kicked : " + selectedPlayerOnEmergencyMeeting);
+            isPlayerSelectedOnEmergencyMeeting = false;
+            selectedPlayerOnEmergencyMeeting = "";
+        } else {
+            showToast("No one was kicked");
+        }
+
+
+        emergencyMeetingWrapper.setVisibility(View.GONE);
+        emergencyMeetingContainerSpliter1.setVisibility(View.GONE);
+        emergencyMeetingContainerSpliter2.setVisibility(View.GONE);
+    }
+    public void disableEmergencyMeeting(View view) {
+        emergencyMeetingWrapper.setVisibility(View.GONE);
+        emergencyMeetingContainerSpliter1.setVisibility(View.GONE);
+        emergencyMeetingContainerSpliter2.setVisibility(View.GONE);
     }
 //    public void callEmergencyMeeting() {
 //        generateInnerLayoutStructure();
