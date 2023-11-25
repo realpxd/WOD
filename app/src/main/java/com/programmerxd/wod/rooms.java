@@ -358,6 +358,9 @@ public class rooms extends AppCompatActivity {
         });
     }
 
+    public void disableOtherClickEvents(View view) {
+        return;
+    }
     @Override
     public void onBackPressed() {
         intentClosed = true;

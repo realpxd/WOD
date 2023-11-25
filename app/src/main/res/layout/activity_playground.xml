@@ -302,7 +302,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:onClick="disableOtherClickEvents"
-        android:visibility="visible"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -324,46 +324,53 @@
             app:cardElevation="20dp">
 
 
-
             <RelativeLayout
                 android:id="@+id/emergencyMeetingContainerSpliter1"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:visibility="visible"
                 android:background="@drawable/stars_bg_0"
-                android:padding="40dp">
+                android:padding="40dp"
+                android:visibility="visible">
 
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_centerHorizontal="true"
                     android:fontFamily="@font/raidercrusader"
                     android:text="Emergency Meeting"
-                    android:textColor="@color/white"
-                    android:textSize="35sp"
-                    android:layout_centerHorizontal="true"
                     android:textAlignment="center"
-
-                    />
+                    android:textColor="@color/white"
+                    android:textSize="35sp" />
 
                 <ImageView
                     android:id="@+id/imageView13"
-                    android:onClick="callEmergencyMeetingButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    app:srcCompat="@drawable/crew_toast"
                     android:layout_centerInParent="true"
-                    />
+                    android:onClick="callEmergencyMeetingButton"
+                    app:srcCompat="@drawable/emergency_button" />
 
-                <ImageView
-                    android:id="@+id/imageView16"
-                    android:onClick="disableEmergencyMeeting"
+                <!--                <ImageView-->
+                <!--                    android:id="@+id/imageView16"-->
+                <!--                    android:onClick="disableEmergencyMeeting"-->
+                <!--                    android:layout_width="match_parent"-->
+                <!--                    android:layout_height="wrap_content"-->
+                <!--                    app:srcCompat="@android:drawable/ic_delete"-->
+                <!--                    android:layout_alignParentBottom="true"-->
+                <!--                    android:layout_centerHorizontal="true"-->
+                <!--                    android:background="@color/silver"/>-->
+                <Button
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:srcCompat="@android:drawable/ic_delete"
                     android:layout_alignParentBottom="true"
                     android:layout_centerHorizontal="true"
-                    android:background="@color/silver"/>
+                    android:backgroundTint="@color/purple"
+                    android:fontFamily="@font/raidercrusader"
+                    android:onClick="disableEmergencyMeeting"
+                    android:text="Cancel"
+                    android:textAlignment="center"
+                    android:textSize="25dp" />
 
 
             </RelativeLayout>
@@ -372,9 +379,9 @@
                 android:id="@+id/emergencyMeetingContainerSpliter2"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:visibility="gone"
                 android:background="@drawable/stars_bg_0"
-                android:padding="20dp">
+                android:padding="20dp"
+                android:visibility="gone">
 
                 <LinearLayout
                     android:id="@+id/emergencyMeetingBottomNav"
@@ -402,8 +409,8 @@
                         android:layout_weight="1"
                         android:backgroundTint="@color/red"
                         android:fontFamily="@font/raidercrusader"
-                        android:text="Vote"
                         android:onClick="submitVote"
+                        android:text="Vote"
                         android:textSize="20sp" />
 
                 </LinearLayout>
@@ -422,29 +429,30 @@
                         android:layout_weight="1"
                         android:orientation="horizontal">
 
-<!--                        <LinearLayout-->
-<!--                            android:id="@+id/EmergencyMeetingPlayerContainer"-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:layout_weight="1"-->
-<!--                            android:orientation="vertical">-->
+                        <!--                        <LinearLayout-->
+                        <!--                            android:id="@+id/EmergencyMeetingPlayerContainer"-->
+                        <!--                            android:layout_width="wrap_content"-->
+                        <!--                            android:layout_height="wrap_content"-->
+                        <!--                            android:layout_weight="1"-->
+                        <!--                            android:orientation="vertical">-->
 
-<!--                            <ImageView-->
-<!--                                android:id="@+id/imageView3"-->
-<!--                                android:layout_width="50dp"-->
-<!--                                android:layout_height="50dp"-->
-<!--                                app:srcCompat="@drawable/player_pfp" />-->
+                        <!--                            <ImageView-->
+                        <!--                                android:id="@+id/imageView3"-->
+                        <!--                                android:layout_width="50dp"-->
+                        <!--                                android:layout_height="50dp"-->
+                        <!--                                app:srcCompat="@drawable/player_pfp" />-->
 
-<!--                            <TextView-->
-<!--                                android:layout_width="wrap_content"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:fontFamily="@font/vertigo_flf_bold"-->
-<!--                                android:gravity="center"-->
-<!--                                android:text="test"-->
-<!--                                android:textColor="@color/white"-->
-<!--                                android:textSize="20dp" />-->
-<!--                        </LinearLayout>-->
+                        <!--                            <TextView-->
+                        <!--                                android:layout_width="wrap_content"-->
+                        <!--                                android:layout_height="wrap_content"-->
+                        <!--                                android:fontFamily="@font/vertigo_flf_bold"-->
+                        <!--                                android:gravity="center"-->
+                        <!--                                android:text="test"-->
+                        <!--                                android:textColor="@color/white"-->
+                        <!--                                android:textSize="20dp" />-->
+                        <!--                        </LinearLayout>-->
                     </LinearLayout>
+
                     <LinearLayout
                         android:id="@+id/EmergencyMeetingMaxPlayersContainer2"
                         android:layout_width="match_parent"
@@ -453,13 +461,14 @@
                         android:orientation="horizontal">
 
                     </LinearLayout>
+
                     <LinearLayout
                         android:id="@+id/EmergencyMeetingMaxPlayersContainer3"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:orientation="horizontal">
-                    </LinearLayout>
+                        android:orientation="horizontal"></LinearLayout>
+
                     <LinearLayout
                         android:id="@+id/EmergencyMeetingMaxPlayersContainer4"
                         android:layout_width="match_parent"
@@ -471,5 +480,80 @@
                 </LinearLayout>
             </RelativeLayout>
         </androidx.cardview.widget.CardView>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/gameResultWrapper"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:onClick="disableOtherClickEvents"
+        android:visibility="gone"
+
+        >
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="20dp"
+        android:backgroundTint="@color/black"
+        app:cardCornerRadius="40dp"
+        app:cardElevation="20dp">
+
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/stars_bg_0"
+        android:padding="40dp"
+        android:visibility="visible">
+
+
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:background="@drawable/radio_playground_greyish"
+            >
+
+            <TextView
+                android:id="@+id/displayGameResult"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:fontFamily="@font/raidercrusader"
+                android:text="Radio Server"
+                android:textAlignment="center"
+                android:textColor="@color/white"
+                android:textSize="30sp" />
+
+        </RelativeLayout>
+
+        <Button
+            android:id="@+id/button4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Exit Game"
+            android:fontFamily="@font/raidercrusader"
+            android:backgroundTint="@color/red"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:onClick="exitGame"
+            android:textSize="25dp"
+            android:layout_marginBottom="20dp"
+
+            />
+
+    </RelativeLayout>
+    </androidx.cardview.widget.CardView>
+
+
     </RelativeLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

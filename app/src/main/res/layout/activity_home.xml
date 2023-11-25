@@ -126,7 +126,7 @@
         android:fontFamily="@font/raidercrusader"
         android:onClick="startGame"
         android:text="JOin a Room !"
-        android:textColor="@color/black"
+        android:textColor="@color/white"
         android:textSize="30dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

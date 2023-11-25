@@ -107,50 +107,60 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-
+        android:onClick="disableOtherClickEvents"
         >
 
         <androidx.cardview.widget.CardView
             android:id="@+id/cardView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_alignParentTop="true"
             android:layout_alignParentEnd="true"
             android:layout_alignParentBottom="true"
-            android:layout_marginStart="30dp"
-            android:layout_marginTop="120dp"
-            android:layout_marginEnd="30dp"
-            android:layout_marginBottom="120dp"
-            android:background="@color/red"
-            android:backgroundTint="@color/red"
-            android:elevation="20dp"
+            android:layout_marginStart="50dp"
+            android:layout_marginTop="135dp"
+            android:layout_marginEnd="50dp"
+            android:layout_marginBottom="135dp"
+            android:background="@color/purple"
+            android:backgroundTint="@color/purple"
+            android:elevation="40dp"
+            app:cardElevation="40dp"
             android:orientation="vertical"
             android:visibility="gone"
             app:cardCornerRadius="20dp">
 
-
-            <pl.droidsonroids.gif.GifImageView
-                android:id="@+id/gifImageView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="#fff"
-                android:backgroundTint="@color/white"
-                android:src="@drawable/soon" />
-
-            <TextView
-                android:id="@+id/textView6"
-                android:layout_width="match_parent"
+            <RelativeLayout
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="bottom"
-                android:layout_marginBottom="50dp"
-                android:fontFamily="@font/raidercrusader"
-                android:gravity="center"
-                android:text="1 / 10"
-                android:textColor="@color/black"
-                android:textSize="40dp"
+                android:layout_gravity="center"
+                >
 
-                />
+                <pl.droidsonroids.gif.GifImageView
+                    android:id="@+id/gifImageView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#fff"
+                    android:backgroundTint="@color/white"
+                    android:layout_alignParentTop="true"
+                    android:layout_centerHorizontal="true"
+                    android:src="@drawable/loading_wod" />
+
+                <TextView
+                    android:id="@+id/textView6"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/gifImageView"
+                    android:layout_alignParentBottom="true"
+                    android:layout_centerHorizontal="true"
+                    android:fontFamily="@font/raidercrusader"
+                    android:gravity="center"
+                    android:text="1 / 10"
+                    android:textColor="@color/white"
+                    android:textSize="40dp" />
+
+            </RelativeLayout>
+
 
         </androidx.cardview.widget.CardView>
 

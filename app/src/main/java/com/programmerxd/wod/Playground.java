@@ -156,6 +156,10 @@ public class Playground extends AppCompatActivity {
     private boolean isPlayerSelectedOnEmergencyMeeting = false;
     private String selectedPlayerOnEmergencyMeeting = "";
     private boolean hasVoted = false;
+    private int highestVotes = 0;
+    private String playerToBeKicked = "";
+    private View previousSelectedViewInEmergencyMeeting = null;
+    private TextView displayGameResult;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -189,6 +193,8 @@ public class Playground extends AppCompatActivity {
         emmpc3 = findViewById(R.id.EmergencyMeetingMaxPlayersContainer3);
         emmpc4 = findViewById(R.id.EmergencyMeetingMaxPlayersContainer4);
         meetingCooldown = findViewById(R.id.meetingCooldown);
+
+        displayGameResult = findViewById(R.id.displayGameResult);
 
         // Request necessary permissions if not granted
         if (!checkSelfPermission()) {
@@ -344,48 +350,60 @@ public class Playground extends AppCompatActivity {
 
 
         broadcastingRef = FirebaseDatabase.getInstance().getReference("broadcastingInformation");
-        ChildEventListener childEventListener = new ChildEventListener() {
-            @Override
-            public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
-                if (snapshot.getKey().equals("didImposterLeft")) {
-                    if (snapshot.getValue().equals(true)) {
-                        didImposterLeft = true;
-                        showToast("Imposter left the game");
-//                        gameOver(role);
-                    }
-                }
-            }
-
-            @Override
-            public void onChildChanged(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
-
-            }
-
-            @Override
-            public void onChildRemoved(@NonNull DataSnapshot snapshot) {
-
-            }
-
-            @Override
-            public void onChildMoved(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
-
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        };
-        childEventListener = broadcastingRef.addChildEventListener(childEventListener);
+//        ChildEventListener childEventListener = new ChildEventListener() {
+//            @Override
+//            public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+//                if (snapshot.getKey().equals("didImposterLeft")) {
+//                    if (snapshot.getValue().equals(true)) {
+//                        didImposterLeft = true;
+//                        showToast("Imposter left the game");
+////                        gameOver("crewmate");
+//                    }
+//                }
+//            }
+//
+//            @Override
+//            public void onChildChanged(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+//
+//            }
+//
+//            @Override
+//            public void onChildRemoved(@NonNull DataSnapshot snapshot) {
+//
+//            }
+//
+//            @Override
+//            public void onChildMoved(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+//
+//            }
+//
+//            @Override
+//            public void onCancelled(@NonNull DatabaseError error) {
+//
+//            }
+//        };
+//        childEventListener = broadcastingRef.addChildEventListener(childEventListener);
 
         broadcastingRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (snapshot.exists()) {
-                    if (snapshot.child("isEmergencyMeetingTriggered").getValue().equals(true)) {
-                        isEmergencyMeetingTriggered = true;
-                        showToast("Emergency meeting triggered");
-                        emergencyMeeting();
+                for (DataSnapshot playerSnapshot : snapshot.getChildren()) {
+                    if (playerSnapshot != null) {
+                        if (playerSnapshot.getKey().equals("didImposterLeft")) {
+                            if (playerSnapshot.getValue().equals(true)) {
+                                didImposterLeft = true;
+                                showToast("Imposter left the game");
+                                gameOver("crewmate");
+                            }
+                        } else if (playerSnapshot.getKey().equals("isEmergencyMeetingTriggered")) {
+                            if (playerSnapshot.getValue().equals(true)) {
+                                isEmergencyMeetingTriggered = true;
+                                showToast("Emergency meeting called");
+                            }
+                        } else {
+                            isEmergencyMeetingTriggered = false;
+                            didImposterLeft = false;
+                        }
                     }
                 }
             }
@@ -399,9 +417,18 @@ public class Playground extends AppCompatActivity {
     }
 
     private void gameOver(String winner) {
-        if (!role.equals("imposter")) {
+        RelativeLayout gameResultWrapper = findViewById(R.id.gameResultWrapper);
+        gameResultWrapper.setVisibility(View.VISIBLE);
+        if (role.equals("crewmate")) {
+            showToast("Game Over " + winner + "s won the game");
+            displayGameResult("Game Over!  You Won :3");
+//            finish();
+        } else if (role.equals("imposter")) {
             showToast("Game Over " + winner + " won the game");
-            finish();
+            displayGameResult("Game Over!  You Lost :(");
+
+        }else {
+
         }
     }
 
@@ -431,7 +458,8 @@ public class Playground extends AppCompatActivity {
 //                currentRoom.child("room1").removeValue();
 //                currentRoom.child("isRoomStarted").setValue(false);
 //                gameOver(); // win the imposter
-                finish(); // Finish the activity
+//                finish(); // Finish the activity
+                gameOver("imposter");
             }
         }.start();
     }
@@ -801,6 +829,22 @@ public class Playground extends AppCompatActivity {
             }
         }.start();
     }
+    private void displayGameResult(String message) {
+        displayGameResult.setText(message);
+        CountDownTimer countDownTimer = new CountDownTimer(2500, 500) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+
+            }
+
+            @Override
+            public void onFinish() {
+
+            }
+        }.start();
+    }
+
+
 
     /**
      * Handles the click event on the player role container, managing actions based on the player's role.
@@ -808,6 +852,7 @@ public class Playground extends AppCompatActivity {
      * @param view The clicked view representing the player role container.
      */
     public void playerRole(View view) {
+        playButtonClickSound();
         // Cast the clicked view to a LinearLayout representing the player role container
         LinearLayout roleIndicatorContainer = (LinearLayout) view;
 
@@ -846,7 +891,6 @@ public class Playground extends AppCompatActivity {
                 }.start();
             } else if (role.equals("crewmate")) {
                 // If the player is not an imposter, show a toast indicating the player's tasks
-                showToast("Your tasks");
                 isPlayerRoleContainerClicked = true;
                 emergencyMeetingWrapper.setVisibility(View.VISIBLE);
                 emergencyMeetingContainerSpliter1.setVisibility(View.VISIBLE);
@@ -1046,6 +1090,7 @@ public class Playground extends AppCompatActivity {
      * @param view The view triggering the shuffle action.
      */
     public void shuffleRadioServer(View view) {
+        playButtonClickSound();
         // Call the method to assign a random token and connect to the corresponding channel
         assignToken();
     }
@@ -1056,6 +1101,7 @@ public class Playground extends AppCompatActivity {
      * @param view The view triggering the switch action.
      */
     public void previousRadioServer(View view) {
+        playButtonClickSound();
         // Decrease the random index and ensure it stays within the valid range
         randomIndex--;
         if (randomIndex < 0) randomIndex = 4;
@@ -1075,6 +1121,7 @@ public class Playground extends AppCompatActivity {
      * @param view The view triggering the switch action.
      */
     public void nextRadioServer(View view) {
+        playButtonClickSound();
         // Increase the random index and ensure it stays within the valid range
         randomIndex++;
         if (randomIndex > 4) randomIndex = 0;
@@ -1112,6 +1159,7 @@ public class Playground extends AppCompatActivity {
      * @param view The View that triggers the method, in this case, the microphone icon.
      */
     public void pushToTalk(View view) {
+        playButtonClickSound();
 
         if (role.equals("dead")) {
             displayToast("You are dead");
@@ -1146,7 +1194,7 @@ public class Playground extends AppCompatActivity {
     }
 
     private void callEmergencyMeeting() {
-        //some code
+        playButtonClickSound();
 
         DatabaseReference isEmergencyMeetingTriggered = FirebaseDatabase.getInstance().getReference("broadcastingInformation");
         isEmergencyMeetingTriggered.child("isEmergencyMeetingTriggered").setValue(true);
@@ -1166,6 +1214,14 @@ public class Playground extends AppCompatActivity {
                 showToast("Cooldown finished");
                 DatabaseReference isEmergencyMeetingTriggered = FirebaseDatabase.getInstance().getReference("broadcastingInformation");
                 isEmergencyMeetingTriggered.child("isEmergencyMeetingTriggered").setValue(false);
+
+                emmpc1.removeAllViews();
+                emmpc2.removeAllViews();
+                emmpc3.removeAllViews();
+                emmpc4.removeAllViews();
+
+                eccount = 0;
+                eccount2 = 0;
 
                 kickPlayer();
 
@@ -1190,7 +1246,7 @@ public class Playground extends AppCompatActivity {
 //        }
 
         eccount = 0;
-        currentRoomRef.addValueEventListener(new ValueEventListener() {
+        currentRoomRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 for (DataSnapshot playerSnapshot : snapshot.getChildren()) {
@@ -1199,7 +1255,7 @@ public class Playground extends AppCompatActivity {
                         String playerUserName = playerSnapshot.child("username").getValue(String.class);
                         if (playerUserName != null) {
                             String playerRole = playerSnapshot.child("role").getValue(String.class);
-                            if (playerRole != null) {
+                            if (playerRole != null && !playerRole.equals("dead")){
                                 LinearLayout verticalContainer = new LinearLayout(Playground.this);
 
                                 verticalContainer.setOrientation(LinearLayout.VERTICAL);
@@ -1210,7 +1266,7 @@ public class Playground extends AppCompatActivity {
                                 params.setMargins(10, 0, 10, 0);
                                 params.weight = 1;
                                 verticalContainer.setLayoutParams(params);
-                                verticalContainer.setOnClickListener(v -> playerSelectedOnEmergencyMeeting(playerUserName));
+                                verticalContainer.setOnClickListener(v -> playerSelectedOnEmergencyMeeting(playerUserName , v));
 
                                 ImageView imageView = new ImageView(Playground.this);
                                 imageView.setLayoutParams(new LinearLayout.LayoutParams(
@@ -1265,17 +1321,25 @@ public class Playground extends AppCompatActivity {
 
     }
 
-    private void playerSelectedOnEmergencyMeeting(String playerName) {
+    private void playerSelectedOnEmergencyMeeting(String playerName , View view) {
+        playButtonClickSound();
         if(hasVoted){
             showToast("You have already voted");
             return;
         }
-        showToast("Player selected : " + playerName);
         isPlayerSelectedOnEmergencyMeeting = true;
         selectedPlayerOnEmergencyMeeting = playerName;
+        if (previousSelectedViewInEmergencyMeeting != null) {
+            previousSelectedViewInEmergencyMeeting.setAlpha(1f);
+        }
+        previousSelectedViewInEmergencyMeeting = view;
+        view.setAlpha(0.5f);
+
+//        view.setBackground(getResources().getDrawable(R.drawable.selected_player_border));
     }
 
     public void submitVote(View view){
+        playButtonClickSound();
         if(hasVoted){
             showToast("You have already voted");
             return;
@@ -1287,6 +1351,35 @@ public class Playground extends AppCompatActivity {
             voteBtn.setText("Voted");
             voteBtn.setBackgroundColor(getResources().getColor(R.color.purple));
             hasVoted = true;
+
+            currentRoomRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    for (DataSnapshot playerSnapshot : snapshot.getChildren()) {
+                        String playerUID = playerSnapshot.getKey();
+                        if (playerUID != null) {
+                            String playerUserName = playerSnapshot.child("username").getValue(String.class);
+                            if (playerUserName != null) {
+                                if (playerUserName.equalsIgnoreCase(selectedPlayerOnEmergencyMeeting)) {
+                                    Integer currentVotes = playerSnapshot.child("votes").getValue(Integer.class);
+                                    if (currentVotes != null) {
+                                        int incrementedVotes = currentVotes + 1;
+                                        playerSnapshot.child("votes").getRef().setValue(incrementedVotes);
+                                    } else {
+                                        playerSnapshot.child("votes").getRef().setValue(1);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
         } else {
             showToast("No player selected");
         }
@@ -1295,9 +1388,178 @@ public class Playground extends AppCompatActivity {
 
     private void kickPlayer() {
         if (isPlayerSelectedOnEmergencyMeeting) {
-            showToast("Player kicked : " + selectedPlayerOnEmergencyMeeting);
             isPlayerSelectedOnEmergencyMeeting = false;
             selectedPlayerOnEmergencyMeeting = "";
+            hasVoted = false;
+
+            Button voteBtn = findViewById(R.id.button3);
+            voteBtn.setText("Vote");
+            voteBtn.setBackgroundColor(getResources().getColor(R.color.red));
+
+            currentRoomRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    for (DataSnapshot playerSnapshot : snapshot.getChildren()) {
+                        String playerUID = playerSnapshot.getKey();
+                        if (playerUID != null) {
+                            String playerUserName = playerSnapshot.child("username").getValue(String.class);
+                            if (playerUserName != null) {
+//                                if (playerUserName.equalsIgnoreCase(selectedPlayerOnEmergencyMeeting)) {
+//                                    playerSnapshot.getRef().removeValue();
+//                                }
+
+                                Integer currentVotes = playerSnapshot.child("votes").getValue(Integer.class);
+                                //the player with the highest votes should be removed in this reference loop
+                                if (currentVotes != null) {
+                                    if (currentVotes > highestVotes) {
+                                        highestVotes = currentVotes;
+                                        playerToBeKicked = playerUserName;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+
+
+            currentRoomRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    for (DataSnapshot playerSnapshot : snapshot.getChildren()) {
+                        String playerUID = playerSnapshot.getKey();
+                        if (playerUID != null) {
+                            String playerUserName = playerSnapshot.child("username").getValue(String.class);
+                            if (playerUserName != null) {
+                                if (playerUserName.equalsIgnoreCase(playerToBeKicked)) {
+                                    String playerRole = playerSnapshot.child("role").getValue(String.class);
+                                    if (playerRole != null){
+                                        if(playerRole.equals("imposter")){
+                                            playerSnapshot.getRef().child("role").setValue("dead");
+
+                                        }else{
+                                            playerSnapshot.getRef().child("role").setValue("dead");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+
+
+            currentRoomRsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+
+                    List<String> names = new ArrayList<>(); // Use a dynamic list to store player names
+                    List<String> allPlayersRoles = new ArrayList<>(); // Use a dynamic list to store player names
+
+                    // Check if the data snapshot exists
+                    if (dataSnapshot.exists()) {
+                        for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                            // Check if a valid randomIndex is available
+                            if (randomIndex != -1) {
+                                if (channelNames[randomIndex].equals(snapshot.getKey())) {
+
+
+                                    DatabaseReference allPlayerRef = snapshot.getRef().child("players");
+                                    DatabaseReference curPlayerRef = snapshot.getRef().child("players").child(currentUser.getUid());
+
+                                    // Set the current player's role in the database
+                                    curPlayerRef.child(username).setValue(role);
+
+                                    // Listen for a single value event on the allPlayerRef node
+                                    allPlayerRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+
+
+                                            int i = 0;
+
+                                            // Iterate through playerSnapshot in the snapshot
+                                            for (DataSnapshot playerSnapshot : snapshot.getChildren()) {
+
+
+                                                // Get player name from the iterators next key
+                                                String playerNameTwo = String.valueOf(playerSnapshot.getChildren().iterator().next().getKey());
+                                                String playerRole = String.valueOf(playerSnapshot.getChildren().iterator().next().getValue());
+                                                DatabaseReference curPlayerRef = playerSnapshot.getRef().child(playerNameTwo);
+
+
+                                                if (playerNameTwo != null) {
+                                                    if (playerNameTwo.equalsIgnoreCase(playerToBeKicked)) {
+                                                        if (playerRole != null) {
+                                                            if (playerRole.equals("imposter")) {
+                                                                showToast("Imposter was kicked " + playerNameTwo);
+                                                                displayToast("Imposter " + playerNameTwo);
+                                                                curPlayerRef.setValue("dead");
+
+                                                                DatabaseReference setImposterLeft = FirebaseDatabase.getInstance().getReference("broadcastingInformation");
+                                                                setImposterLeft.child("didImposterLeft").setValue(true);
+                                                            } else{
+                                                                showToast("Crewmate was kicked " + playerNameTwo);
+                                                                displayToast("Try Again :)");
+                                                                curPlayerRef.setValue("dead");
+                                                            }
+                                                            startPlayground("update");
+                                                        }
+                                                    }
+                                                }
+
+
+                                                // Check if the playerNameTwo is not null
+                                                if (playerNameTwo != null) {
+                                                    names.add(playerNameTwo); // Add names to the list
+                                                }
+                                                if (playerRole != null) {
+                                                    allPlayersRoles.add(playerRole);
+                                                }
+                                                i++;
+                                            }
+
+                                            // Convert the list to an array
+                                            String[] playerNamesTwo = names.toArray(new String[0]);
+                                            String[] playersRoles = allPlayersRoles.toArray(new String[0]);
+
+                                            // Call method to create player views
+                                            createPlayerView(playerNamesTwo, playersRoles);
+                                        }
+
+                                        @Override
+                                        public void onCancelled(@NonNull DatabaseError error) {
+                                            // Handle errors during data retrieval
+                                        }
+                                    });
+                                } else {
+                                    // Remove the current player's data if not in the correct channel
+                                    DatabaseReference curPlayerRef = snapshot.getRef().child("players").child(currentUser.getUid());
+                                    curPlayerRef.removeValue();
+                                }
+                            } else {
+                                // Handle the case when randomIndex is not valid
+                            }
+                        }
+                    }
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+                    // Display a toast in case of an error during data retrieval
+                    showToast("Error: " + databaseError.getMessage());
+                }
+            });
         } else {
             showToast("No one was kicked");
         }
@@ -1308,78 +1570,11 @@ public class Playground extends AppCompatActivity {
         emergencyMeetingContainerSpliter2.setVisibility(View.GONE);
     }
     public void disableEmergencyMeeting(View view) {
+        playButtonClickSound();
         emergencyMeetingWrapper.setVisibility(View.GONE);
         emergencyMeetingContainerSpliter1.setVisibility(View.GONE);
         emergencyMeetingContainerSpliter2.setVisibility(View.GONE);
     }
-//    public void callEmergencyMeeting() {
-//        generateInnerLayoutStructure();
-//    }
-//
-//    private void generateInnerLayoutStructure() {
-//        LinearLayout horizontalContainer = new LinearLayout(context);
-//        horizontalContainer.setLayoutParams(new LinearLayout.LayoutParams(
-//                ViewGroup.LayoutParams.MATCH_PARENT,
-//                ViewGroup.LayoutParams.WRAP_CONTENT));
-//        horizontalContainer.setOrientation(LinearLayout.HORIZONTAL);
-//        horizontalContainer.setId(R.id.EmergencyMeetingHorizontalPlayerContainer);
-//
-//        for (int i = 0; i < 3; i++) {
-//            LinearLayout verticalContainer = createVerticalContainer(context);
-//            ImageView imageView = createImageView(context);
-//            TextView textView = createTextView(context, playersNames[i]);
-//
-//            verticalContainer.addView(imageView);
-//            verticalContainer.addView(textView);
-//
-//            horizontalContainer.addView(verticalContainer);
-//        }
-//
-//        LinearLayout parentContainer = findViewById(R.id.EmergencyMeetingPlayerContainerWrapper);
-//        parentContainer.addView(horizontalContainer);
-//    }
-//
-//    private LinearLayout createVerticalContainer(Context context) {
-//        LinearLayout verticalContainer = new LinearLayout(context);
-//        verticalContainer.setLayoutParams(new LinearLayout.LayoutParams(
-//                ViewGroup.LayoutParams.WRAP_CONTENT,
-//                ViewGroup.LayoutParams.WRAP_CONTENT));
-//        verticalContainer.setOrientation(LinearLayout.VERTICAL);
-//        verticalContainer.setWeightSum(1); // Set weight sum to distribute equal space
-//
-//        return verticalContainer;
-//    }
-//
-//    private ImageView createImageView(Context context) {
-//        ImageView imageView = new ImageView(context);
-//        imageView.setLayoutParams(new LinearLayout.LayoutParams(
-//                ViewGroup.LayoutParams.WRAP_CONTENT,
-//                ViewGroup.LayoutParams.WRAP_CONTENT));
-//        imageView.setImageResource(R.drawable.player_pfp); // Set default image resource
-//
-//        return imageView;
-//    }
-//
-//    private TextView createTextView(Context context, String playerName) {
-//        TextView textView = new TextView(context);
-//        textView.setLayoutParams(new LinearLayout.LayoutParams(
-//                ViewGroup.LayoutParams.WRAP_CONTENT,
-//                ViewGroup.LayoutParams.WRAP_CONTENT));
-//        textView.setText(playerName);
-//        textView.setTextSize(20);
-//        textView.setTextColor(context.getResources().getColor(R.color.white));
-//        textView.setGravity(Gravity.CENTER);
-//        textView.setTypeface(ResourcesCompat.getFont(context, R.font.vertigo_flf_bold));
-//
-//        return textView;
-//    }
-//
-//    private LinearLayout findViewById(int id) {
-//        // Implement this method to find the layout by ID
-//        // Example:
-//        return (LinearLayout) findViewById(id);
-//    }
-
 
     /**
      * Displays a short-duration toast message with the provided message text.
@@ -1396,6 +1591,7 @@ public class Playground extends AppCompatActivity {
      * @param view The view triggering the exit action.
      */
     public void exitGame(View view) {
+        playButtonClickSound();
         // Finish the current activity to exit the game
         finish();
 //        overridePendingTransition(R.anim.fadein, R.anim.fadeout);
@@ -1424,22 +1620,24 @@ public class Playground extends AppCompatActivity {
 
     }
 
-    /**
-     * Overrides the back button press behavior to play a button click sound.
-     */
-    @Override
-    public void onBackPressed() {
+    private void playButtonClickSound() {
         // Create and play a button click sound using MediaPlayer
         MediaPlayer mediaPlayer;
         mediaPlayer = MediaPlayer.create(Playground.this, R.raw.button_clicked);
         mediaPlayer.setLooping(false);
         mediaPlayer.start();
-        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            public void onCompletion(MediaPlayer mp) {
-                mediaPlayer.stop();
-                mediaPlayer.release();
-            }
+        mediaPlayer.setOnCompletionListener(mp -> {
+            mediaPlayer.stop();
+            mediaPlayer.release();
         });
+    }
+    /**
+     * Overrides the back button press behavior to play a button click sound.
+     */
+    @Override
+    public void onBackPressed() {
+        playButtonClickSound();
+
     }
 
     /**
