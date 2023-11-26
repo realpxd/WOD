@@ -524,7 +524,7 @@
             >
 
             <TextView
-                android:id="@+id/displayGameResult"
+                android:id="@+id/displayGameResultText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"

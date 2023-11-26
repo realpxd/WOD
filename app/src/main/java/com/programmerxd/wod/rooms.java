@@ -11,6 +11,7 @@ import android.os.CountDownTimer;
 import android.os.Handler;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -138,7 +139,8 @@ public class rooms extends AppCompatActivity {
 
                 // Check if the card view is not visible
                 CardView cardView = findViewById(R.id.cardView);
-                if (!(cardView.getVisibility() == View.VISIBLE)) {
+                RelativeLayout waitingAreaWrapper = findViewById(R.id.waitingAreaWrapper);
+                if (!(waitingAreaWrapper.getVisibility() == View.VISIBLE)) {
                     // Check if the current user is not null
                     if (currentUser != null) {
 
@@ -192,13 +194,15 @@ public class rooms extends AppCompatActivity {
         // Set the player in the room1 database
         playersRef.child("player_" + currentUser.getUid()).setValue(true);
 
-        CardView cardView = findViewById(R.id.cardView);
-        cardView.setVisibility(View.VISIBLE);
+//        CardView cardView = findViewById(R.id.cardView);
+//        cardView.setVisibility(View.VISIBLE);
+        RelativeLayout waitingAreaWrapper = findViewById(R.id.waitingAreaWrapper);
+        waitingAreaWrapper.setVisibility(View.VISIBLE);
 
         // Set up an empty click listener for the card view
-        findViewById(R.id.cardView).setOnClickListener(v -> {
-            // Do nothing on card view click
-        });
+//        findViewById(R.id.cardView).setOnClickListener(v -> {
+//            // Do nothing on card view click
+//        });
 
         // Check the number of players in the room
         playersRef.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -338,8 +342,10 @@ public class rooms extends AppCompatActivity {
                     handler.postDelayed(this, 1000); // Check every 1 second
                 } else {
                     showToast("Maximum wait time reached. Exiting the room.");
-                    CardView cardView = findViewById(R.id.cardView);
-                    cardView.setVisibility(View.GONE);
+//                    CardView cardView = findViewById(R.id.cardView);
+//                    cardView.setVisibility(View.GONE);
+                    RelativeLayout waitingAreaWrapper = findViewById(R.id.waitingAreaWrapper);
+                    waitingAreaWrapper.setVisibility(View.GONE);
                     elapsedTime = 0;
                 }
             }

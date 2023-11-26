@@ -159,7 +159,7 @@ public class Playground extends AppCompatActivity {
     private int highestVotes = 0;
     private String playerToBeKicked = "";
     private View previousSelectedViewInEmergencyMeeting = null;
-    private TextView displayGameResult;
+    private TextView displayGameResultText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -194,7 +194,9 @@ public class Playground extends AppCompatActivity {
         emmpc4 = findViewById(R.id.EmergencyMeetingMaxPlayersContainer4);
         meetingCooldown = findViewById(R.id.meetingCooldown);
 
-        displayGameResult = findViewById(R.id.displayGameResult);
+        displayGameResultText = findViewById(R.id.displayGameResultText);
+
+        currentRoomData = FirebaseDatabase.getInstance().getReference("verifyAvailableRooms");
 
         // Request necessary permissions if not granted
         if (!checkSelfPermission()) {
@@ -399,6 +401,7 @@ public class Playground extends AppCompatActivity {
                             if (playerSnapshot.getValue().equals(true)) {
                                 isEmergencyMeetingTriggered = true;
                                 showToast("Emergency meeting called");
+                                emergencyMeeting();
                             }
                         } else {
                             isEmergencyMeetingTriggered = false;
@@ -830,7 +833,7 @@ public class Playground extends AppCompatActivity {
         }.start();
     }
     private void displayGameResult(String message) {
-        displayGameResult.setText(message);
+        displayGameResultText.setText(message);
         CountDownTimer countDownTimer = new CountDownTimer(2500, 500) {
             @Override
             public void onTick(long millisUntilFinished) {
@@ -1600,7 +1603,6 @@ public class Playground extends AppCompatActivity {
     private void removePlayer() {
         // Remove the current player's data from the database
 //        DatabaseReference room1Ref = FirebaseDatabase.getInstance().getReference("room1");
-        currentRoomData = FirebaseDatabase.getInstance().getReference("verifyAvailableRooms");
 
         currentRoomRef.child("player_" + currentUser.getUid()).removeValue();
 
