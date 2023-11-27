@@ -83,3 +83,7 @@ meeting to vote out the killer.
 - Hari om - [Instagram](https://www.instagram.com/potter_1_18/)
 - Project Link: [github](https://github.com/realpxd/WOD)
 - Project Link: [apk](https://github.com/realpxd/WOD/blob/master/app/release/app-release.apk)
+
+# Download the apk
+
+[Download](https://github.com/realpxd/WOD/blob/master/app/release/app-release.apk)
