@@ -22,9 +22,7 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -32,7 +30,6 @@ import androidx.core.content.res.ResourcesCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -68,6 +65,10 @@ public class Playground extends AppCompatActivity {
     private final int uid = 0;
     private final String currentRoom = "room1";
     private final String[] playerNames = new String[10];
+    //    private String[] allPlayerRoles;
+    private final String[] allPlayerRoles = new String[10]; // Initialize with appropriate size
+    private final boolean isPlayerDead = false;
+    private final String[] deadPlayers = new String[10];
     // Default channel name
     public String channelName = channelNames[0];
     // ImageView for role indication
@@ -126,8 +127,6 @@ public class Playground extends AppCompatActivity {
     private int time_countdown = 10;
     // Role assigned to the current user (e.g., imposter or crewmate)
     private String role;
-    //    private String[] allPlayerRoles;
-    private String[] allPlayerRoles = new String[10]; // Initialize with appropriate size
     // Countdown timer for certain game actions
     private CountDownTimer countdownTimer;
     // Flag to indicate the microphone state (on or off)
@@ -143,8 +142,6 @@ public class Playground extends AppCompatActivity {
     // Firebase user representing the current user
     private FirebaseUser currentUser;
     private MediaPlayer gameStartVoicePlayer;
-    private boolean isPlayerDead = false;
-    private String[] deadPlayers = new String[10];
     private ImageView microphoneIcon;
     private DatabaseReference broadcastingRef;
     private RelativeLayout emergencyMeetingWrapper;
@@ -430,7 +427,7 @@ public class Playground extends AppCompatActivity {
             showToast("Game Over " + winner + " won the game");
             displayGameResult("Game Over!  You Lost :(");
 
-        }else {
+        } else {
 
         }
     }
@@ -832,6 +829,7 @@ public class Playground extends AppCompatActivity {
             }
         }.start();
     }
+
     private void displayGameResult(String message) {
         displayGameResultText.setText(message);
         CountDownTimer countDownTimer = new CountDownTimer(2500, 500) {
@@ -846,7 +844,6 @@ public class Playground extends AppCompatActivity {
             }
         }.start();
     }
-
 
 
     /**
@@ -1189,7 +1186,6 @@ public class Playground extends AppCompatActivity {
 
 
     public void disableOtherClickEvents(View view) {
-        return;
     }
 
     public void callEmergencyMeetingButton(View view) {
@@ -1212,6 +1208,7 @@ public class Playground extends AppCompatActivity {
             public void onTick(long millisUntilFinished) {
                 meetingCooldown.setText("Cooldown : " + millisUntilFinished / 1000 + "s");
             }
+
             @Override
             public void onFinish() {
                 showToast("Cooldown finished");
@@ -1258,23 +1255,18 @@ public class Playground extends AppCompatActivity {
                         String playerUserName = playerSnapshot.child("username").getValue(String.class);
                         if (playerUserName != null) {
                             String playerRole = playerSnapshot.child("role").getValue(String.class);
-                            if (playerRole != null && !playerRole.equals("dead")){
+                            if (playerRole != null && !playerRole.equals("dead")) {
                                 LinearLayout verticalContainer = new LinearLayout(Playground.this);
 
                                 verticalContainer.setOrientation(LinearLayout.VERTICAL);
-                                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                                        LinearLayout.LayoutParams.WRAP_CONTENT
-                                );
+                                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
                                 params.setMargins(10, 0, 10, 0);
                                 params.weight = 1;
                                 verticalContainer.setLayoutParams(params);
-                                verticalContainer.setOnClickListener(v -> playerSelectedOnEmergencyMeeting(playerUserName , v));
+                                verticalContainer.setOnClickListener(v -> playerSelectedOnEmergencyMeeting(playerUserName, v));
 
                                 ImageView imageView = new ImageView(Playground.this);
-                                imageView.setLayoutParams(new LinearLayout.LayoutParams(
-                                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                                        ViewGroup.LayoutParams.WRAP_CONTENT));
+                                imageView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
                                 imageView.setImageResource(R.drawable.player_pfp); // Set default image resource
 
                                 LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(dpToPx(50), dpToPx(50));
@@ -1282,9 +1274,7 @@ public class Playground extends AppCompatActivity {
 
 
                                 TextView textView = new TextView(Playground.this);
-                                textView.setLayoutParams(new LinearLayout.LayoutParams(
-                                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                                        ViewGroup.LayoutParams.WRAP_CONTENT));
+                                textView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
                                 textView.setText(playerUserName);
                                 textView.setTextSize(20);
                                 textView.setTextColor(getResources().getColor(R.color.white));
@@ -1324,9 +1314,9 @@ public class Playground extends AppCompatActivity {
 
     }
 
-    private void playerSelectedOnEmergencyMeeting(String playerName , View view) {
+    private void playerSelectedOnEmergencyMeeting(String playerName, View view) {
         playButtonClickSound();
-        if(hasVoted){
+        if (hasVoted) {
             showToast("You have already voted");
             return;
         }
@@ -1341,9 +1331,9 @@ public class Playground extends AppCompatActivity {
 //        view.setBackground(getResources().getDrawable(R.drawable.selected_player_border));
     }
 
-    public void submitVote(View view){
+    public void submitVote(View view) {
         playButtonClickSound();
-        if(hasVoted){
+        if (hasVoted) {
             showToast("You have already voted");
             return;
         }
@@ -1441,11 +1431,11 @@ public class Playground extends AppCompatActivity {
                             if (playerUserName != null) {
                                 if (playerUserName.equalsIgnoreCase(playerToBeKicked)) {
                                     String playerRole = playerSnapshot.child("role").getValue(String.class);
-                                    if (playerRole != null){
-                                        if(playerRole.equals("imposter")){
+                                    if (playerRole != null) {
+                                        if (playerRole.equals("imposter")) {
                                             playerSnapshot.getRef().child("role").setValue("dead");
 
-                                        }else{
+                                        } else {
                                             playerSnapshot.getRef().child("role").setValue("dead");
                                         }
                                     }
@@ -1511,7 +1501,7 @@ public class Playground extends AppCompatActivity {
 
                                                                 DatabaseReference setImposterLeft = FirebaseDatabase.getInstance().getReference("broadcastingInformation");
                                                                 setImposterLeft.child("didImposterLeft").setValue(true);
-                                                            } else{
+                                                            } else {
                                                                 showToast("Crewmate was kicked " + playerNameTwo);
                                                                 displayToast("Try Again :)");
                                                                 curPlayerRef.setValue("dead");
@@ -1572,6 +1562,7 @@ public class Playground extends AppCompatActivity {
         emergencyMeetingContainerSpliter1.setVisibility(View.GONE);
         emergencyMeetingContainerSpliter2.setVisibility(View.GONE);
     }
+
     public void disableEmergencyMeeting(View view) {
         playButtonClickSound();
         emergencyMeetingWrapper.setVisibility(View.GONE);
@@ -1633,6 +1624,7 @@ public class Playground extends AppCompatActivity {
             mediaPlayer.release();
         });
     }
+
     /**
      * Overrides the back button press behavior to play a button click sound.
      */

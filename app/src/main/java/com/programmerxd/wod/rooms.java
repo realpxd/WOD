@@ -28,7 +28,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-import java.util.Objects;
 import java.util.Random;
 
 public class rooms extends AppCompatActivity {
@@ -365,8 +364,8 @@ public class rooms extends AppCompatActivity {
     }
 
     public void disableOtherClickEvents(View view) {
-        return;
     }
+
     @Override
     public void onBackPressed() {
         intentClosed = true;

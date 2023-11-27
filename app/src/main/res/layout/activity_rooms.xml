@@ -102,15 +102,12 @@
     </LinearLayout>
 
 
-
-
     <RelativeLayout
         android:id="@+id/waitingAreaWrapper"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:onClick="disableOtherClickEvents"
-        android:visibility="gone"
-        >
+        android:visibility="gone">
 
         <androidx.cardview.widget.CardView
             android:id="@+id/cardView"
@@ -127,25 +124,24 @@
             android:background="@color/purple"
             android:backgroundTint="@color/purple"
             android:elevation="40dp"
-            app:cardElevation="40dp"
             android:orientation="vertical"
             android:visibility="visible"
-            app:cardCornerRadius="20dp">
+            app:cardCornerRadius="20dp"
+            app:cardElevation="40dp">
 
             <RelativeLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                >
+                android:layout_gravity="center">
 
                 <pl.droidsonroids.gif.GifImageView
                     android:id="@+id/gifImageView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="#fff"
-                    android:backgroundTint="@color/white"
                     android:layout_alignParentTop="true"
                     android:layout_centerHorizontal="true"
+                    android:background="#fff"
+                    android:backgroundTint="@color/white"
                     android:src="@drawable/loading_wod" />
 
                 <TextView

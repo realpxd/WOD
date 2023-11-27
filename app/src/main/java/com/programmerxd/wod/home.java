@@ -170,7 +170,7 @@ public class home extends AppCompatActivity {
         startActivity(intent);
     }
 
-    public void openSettings(View view){
+    public void openSettings(View view) {
         showToast("Under Construction");
         playButtonClickSound();
     }

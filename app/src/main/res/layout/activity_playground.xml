@@ -467,7 +467,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:orientation="horizontal"></LinearLayout>
+                        android:orientation="horizontal">
+
+                    </LinearLayout>
 
                     <LinearLayout
                         android:id="@+id/EmergencyMeetingMaxPlayersContainer4"
@@ -487,72 +489,96 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:onClick="disableOtherClickEvents"
-        android:visibility="gone"
+        android:visibility="visible"
 
         >
 
-    <androidx.cardview.widget.CardView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="20dp"
-        android:layout_marginEnd="20dp"
-        android:layout_marginBottom="20dp"
-        android:backgroundTint="@color/black"
-        app:cardCornerRadius="40dp"
-        app:cardElevation="20dp">
-
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/stars_bg_0"
-        android:padding="40dp"
-        android:visibility="visible">
-
-
-
-        <RelativeLayout
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:background="@drawable/radio_playground_greyish"
-            >
-
-            <TextView
-                android:id="@+id/displayGameResultText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_centerInParent="true"
-                android:fontFamily="@font/raidercrusader"
-                android:text="Radio Server"
-                android:textAlignment="center"
-                android:textColor="@color/white"
-                android:textSize="30sp" />
-
-        </RelativeLayout>
-
-        <Button
-            android:id="@+id/button4"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Exit Game"
-            android:fontFamily="@font/raidercrusader"
-            android:backgroundTint="@color/red"
+            android:layout_height="match_parent"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
             android:layout_alignParentBottom="true"
-            android:layout_centerHorizontal="true"
-            android:onClick="exitGame"
-            android:textSize="25dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginEnd="20dp"
             android:layout_marginBottom="20dp"
+            android:backgroundTint="@color/black"
+            app:cardCornerRadius="40dp"
+            app:cardElevation="20dp">
 
-            />
 
-    </RelativeLayout>
-    </androidx.cardview.widget.CardView>
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/stars_bg_0"
+                android:padding="40dp"
+                android:visibility="visible">
+
+
+                <RelativeLayout
+                    android:id="@+id/displayGameResultWrapper"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginTop="20dp"
+                    android:background="@drawable/radio_playground_white">
+
+                    <TextView
+                        android:id="@+id/displayGameResultText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_centerInParent="true"
+                        android:fontFamily="@font/raidercrusader"
+                        android:text="Game Over"
+                        android:textAlignment="center"
+                        android:textColor="@color/purple"
+                        android:textSize="30sp" />
+
+                </RelativeLayout>
+
+                <TextView
+                    android:id="@+id/displayGameResultText1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/displayGameResultWrapper"
+                    android:layout_marginTop="35dp"
+                    android:layout_marginBottom="15dp"
+                    android:fontFamily="@font/vertigo_flf_bold"
+                    android:justificationMode="inter_word"
+                    android:text="GAME OVER ! , Thanks for trying out this game . Hope you enjoyed it . Please do share your feedback and suggestions to improve this game ."
+                    android:textColor="@color/white"
+                    android:textSize="26dp" />
+
+                <TextView
+                    android:id="@+id/displayGameResultText2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_above="@+id/button4"
+                    android:layout_below="@+id/displayGameResultText1"
+                    android:fontFamily="@font/vertigo_flf_bold"
+                    android:text="Email ID :- thisisnamansaini@gmail.com"
+                    android:textColor="@color/purple"
+                    android:textSize="26dp" />
+
+                <Button
+                    android:id="@+id/button4"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentBottom="true"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginBottom="20dp"
+                    android:backgroundTint="@color/red"
+                    android:fontFamily="@font/raidercrusader"
+                    android:onClick="exitGame"
+                    android:text="Exit Game"
+                    android:textSize="25dp"
+
+                    />
+
+            </RelativeLayout>
+        </androidx.cardview.widget.CardView>
 
 
     </RelativeLayout>

@@ -26,8 +26,7 @@ public class App {
 
         // Generate tokens for each channel
         for (int i = 0; i < numberOfTokens; i++) {
-            tokens[i] = tokenBuilder.buildTokenWithUid(appId, appCertificate,
-                    channelNames[i], uid, Role.ROLE_PUBLISHER, timestamp, timestamp + i);
+            tokens[i] = tokenBuilder.buildTokenWithUid(appId, appCertificate, channelNames[i], uid, Role.ROLE_PUBLISHER, timestamp, timestamp + i);
         }
         return tokens;
     }
