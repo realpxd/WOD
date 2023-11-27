@@ -22,7 +22,7 @@ meeting to vote out the killer.
 
 ## App Screenshots
 
-[App Screenshots]()
+[App Screenshots](https://github.com/realpxd/WOD/tree/master/ss)
 
 ## Tech Stack
 
@@ -61,7 +61,7 @@ meeting to vote out the killer.
 
 ## License
 
-[MIT](https://choosealicense.com/licenses/mit/)
+[CC0-1.0 license](https://github.com/realpxd/WOD/blob/master/LICENSE)
 
 ## Acknowledgements
 
