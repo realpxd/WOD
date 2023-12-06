@@ -86,4 +86,5 @@ meeting to vote out the killer.
 
 # Download the apk
 
-[Download](https://github.com/realpxd/WOD/blob/master/app/release/app-release.apk)
+[Github Link](https://github.com/realpxd/WOD/blob/master/app/release/app-release.apk) <br/>
+[GDrive Link](https://drive.google.com/file/d/1Qkmt0xx6VwAhRzYlsLFnfUq0hatj-hJG/view?usp=drivesdk)
